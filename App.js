@@ -1,7 +1,6 @@
-import {AppRegistry} from 'react-native';
 import React, {Component} from 'react';
 import {Alert, Modal,StyleSheet, Text, Button, View, TouchableOpacity, TextInput} from 'react-native';
-import {Agenda, DateData, AgendaEntry, AgendaSchedule} from 'react-native-calendars';
+import {Agenda} from 'react-native-calendars';
 import testIDs from './dataSet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ActionButton from 'react-native-action-button';
@@ -21,14 +20,17 @@ export default class App extends Component {
       toMinuteTime: new Date().getMinutes(),
       date: new Date(),
       items: undefined,
+      fetchedData:[],
       modalVisible: false,
       showFromTimePicker: false,
       showToTimePicker: false,
       showDatePicker: false,
+      completed:false,
     };
   }
 
   componentDidMount() {
+    this.importData();
     //this.getData();
   }
 
@@ -43,24 +45,71 @@ export default class App extends Component {
     }
   };
 
-
-  getAllKeys = async () => {
+  clean = async () => {
     try {
-      return AsyncStorage.getAllKeys();
-    } catch (e) {
-      console.log('Error storing value in AsyncStorage');
+      await AsyncStorage.clear();
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+
+  importData = async () => {
+    try {
+      this.setState({fetchedData:[]})
+      const fetchedData = this.state.fetchedData || {};
+      const keys = await AsyncStorage.getAllKeys();
+      if(keys.length!=0){      
+        for(let key of keys){
+          let value = await AsyncStorage.getItem(key);
+          let parsedJSON = JSON.parse(value);
+          console.log(parsedJSON)
+          
+          fetchedData.push({
+            start: ''+parsedJSON.fromHourTime+':'+(parsedJSON.fromMinuteTime < 10 ? '0'+parsedJSON.fromMinuteTime : parsedJSON.fromMinuteTime),
+            end: ''+parsedJSON.toHourTime+':'+(parsedJSON.toMinuteTime < 10 ? '0'+parsedJSON.toMinuteTime : parsedJSON.toMinuteTime),
+            name: parsedJSON.name,
+            description: parsedJSON.description,
+            height: 100, // Math.max(50, Math.floor(Math.random() * 150)),
+            completed: false
+          });          
+        }
+        this.setState({
+          fetchedData: fetchedData
+        });      
+      }
+    } catch (error) {
+      console.error(error)
     }
   }
 
   storeData = async (key) => {
     try {
-      console.log(key);
-      await AsyncStorage.setItem("1", this.state);
+      
+      var body = {
+        'name':this.state.name,
+        'description':this.state.description,
+        'completed': this.state.completed,
+        'fromHourTime': this.state.fromHourTime,
+        'fromMinuteTime': this.state.fromMinuteTime,
+        'toHourTime': this.state.toHourTime,
+        'toMinuteTime': this.state.toMinuteTime,
+        'date': this.state.date
+      }
+      const jsonString = JSON.stringify(body);      
+      await AsyncStorage.setItem(key, jsonString);
       //this.setState({ storedValue: this.state.inputValue });
     } catch (e) {
       console.log('Error storing value in AsyncStorage');
     }
   };
+
+  generateMilliSeconds(){
+    const min = 100;  // Minimum value of the integer
+    const max = 999;  // Maximum value of the integer
+    const randomInt = Math.floor(Math.random() * (max - min + 1) + min);
+    return randomInt;
+  }
 
   handleSave = () => {
     const { fromHourTime, fromMinuteTime, date } = this.state;
@@ -68,18 +117,18 @@ export default class App extends Component {
     let month = date.getMonth() + 1;
     let year = date.getFullYear();
 
-
     var dateTarget = new Date();
-    dateTarget.setDay(day);
+    dateTarget.setDate(day);
     dateTarget.setMonth(month-1);
     dateTarget.setFullYear(year);
-    dateTarget.setHours(fromHourTime);
+    dateTarget.setUTCHours(fromHourTime);
     dateTarget.setMinutes(fromMinuteTime);
     dateTarget.setSeconds(0);
-    dateTarget.setMilliseconds(0); 
-    console.log(dateTarget);
+    dateTarget.setMilliseconds(this.generateMilliSeconds());
+    let key = dateTarget.getTime() * 1000000;
+    let keyString = key.toString();
     
-    //this.storeData(dateTarget.toString());
+    this.storeData(keyString);
 
     this.setState({
       name: '',
@@ -89,8 +138,9 @@ export default class App extends Component {
       toHourTime: new Date().getHours()+1,
       toMinuteTime: new Date().getMinutes(),
       date: new Date(),
+      modalVisible:false
     });
-    this.updateVisibility(false)
+    
   };
 
   handleCancel = () => {
@@ -102,8 +152,8 @@ export default class App extends Component {
       toHourTime: new Date().getHours()+1,
       toMinuteTime: new Date().getMinutes(),
       date: new Date(),
+      modalVisible:false
     });
-    this.updateVisibility(false)
   };
 
   onDismissFrom = () => {
@@ -120,7 +170,6 @@ export default class App extends Component {
   }
 
   onConfirmTo = ({ hours, minutes }) => {
-    console.log({ hours, minutes });
     this.setState({ showToTimePicker: false, toHourTime:hours, toMinuteTime:minutes });
   }
 
@@ -132,9 +181,8 @@ export default class App extends Component {
     let day = date.getDate();
     let month = date.getMonth() + 1;
     let year = date.getFullYear();
-    let currentDate = `${day}-${month}-${year}`;
-    this.setState({ showDatePicker: false,date:currentDate  });
-    
+    let currentDate = new Date(year, month-1, day);
+    this.setState({ showDatePicker: false,date:currentDate  });    
   }
 
   render() {
@@ -155,7 +203,7 @@ export default class App extends Component {
       <Agenda
         testID={testIDs.agenda.CONTAINER}
         items={this.state.items}
-        loadItemsForMonth={this.loadData}
+        loadItemsForMonth={this.loadItems}
         selected={'2023-05-16'}
         renderItem={this.renderItem}
         renderEmptyDate={this.renderEmptyDate}
@@ -184,8 +232,7 @@ export default class App extends Component {
           transparent={true}
           visible={modalVisible}
           onRequestClose={() => {
-            Alert.alert('Modal has been closed.');
-            this.updateVisibility(this.state.changeVisibility);
+            this.setState({modalVisible:false})
           }}>
           <View style={styles.centeredView}>
                 <View style={styles.modalView}>
@@ -228,7 +275,7 @@ export default class App extends Component {
                     <View style={{ flexDirection: 'row' }}>
                     <Button onPress={() => this.setState({showDatePicker:true})} uppercase={false} mode="outlined" title='Pick single date' />
                         <DatePickerModal
-                          locale='en'
+                          locale={'en'}
                           mode="single"
                           visible={showDatePicker}
                           onDismiss={this.onDismissDate}
@@ -245,7 +292,7 @@ export default class App extends Component {
                 </View>
           </View>
         </Modal>
-        <ActionButton buttonColor="rgba(231,76,60,1)" useNativeDriver={false} onPress={() => this.updateVisibility(this.state.changeVisibility)}>
+        <ActionButton useNativeDriver={false} onPress={() =>this.setState({modalVisible:true})}>
         </ActionButton>
       </SafeAreaProvider>
     );
@@ -255,29 +302,13 @@ export default class App extends Component {
     return `${item?.reservation?.day}${index}`;
  };
 
-
-  updateVisibility = (val) =>{
-    this.setState({modalVisible:val})
-  }
-
   loadData = (day) =>{
-    const items = this.state.items || {};
-    const newItems = {};
-    /*
-    let keys = this.getAllKeys();
-    console.log('Hello ')
-    console.log(keys)
-    for(key in keys){
-      let val = this.getData(key);
-      newItems[key] = val;
-    }
-    */
-    this.setState({
-      items: newItems
-    });
+   
+    setTimeout(() => {this.importData(day);}, 1000);
   }
 
   loadItems = (day) => {
+    console.log(this.state.fetchedData)
     const items = this.state.items || {};
 
     setTimeout(() => {
@@ -288,6 +319,7 @@ export default class App extends Component {
           items[strTime] = [];
           
           const numItems = 2//Math.floor(Math.random() * 3 + 1);
+          /*
           for (let j = 0; j < numItems; j++) {
             items[strTime].push({
               start: '12.00',
@@ -299,8 +331,24 @@ export default class App extends Component {
               completed: false
             });
           }
+          */
         }
       }
+      const time = day.timestamp + 0 * 24 * 60 * 60 * 1000;
+      const strTime = this.timeToString(time);
+      for (data of this.state.fetchedData){
+        items[strTime].push({
+          start: data.start,
+          end: data.end,
+          name: data.name,
+          description:data.description,
+          height: 100, // Math.max(50, Math.floor(Math.random() * 150)),
+          day: strTime,
+          completed: false
+        });
+      }
+
+      
       
       const newItems = {};
       Object.keys(items).forEach(key => {
@@ -475,10 +523,6 @@ const styles = StyleSheet.create({
   actionsInputs: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  marginL:{
-    marginLeft:50,
-    height:'20%'
   },
   divider: {
     borderBottomWidth: 2,
