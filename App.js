@@ -1,34 +1,161 @@
+import {AppRegistry} from 'react-native';
 import React, {Component} from 'react';
-import {Alert, Modal,StyleSheet, Text, Pressable,View, TouchableOpacity, TextInput} from 'react-native';
+import {Alert, Modal,StyleSheet, Text, Button, View, TouchableOpacity, TextInput} from 'react-native';
 import {Agenda, DateData, AgendaEntry, AgendaSchedule} from 'react-native-calendars';
 import testIDs from './dataSet';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import ActionButton from 'react-native-action-button';
-import DatePicker from 'react-native-date-picker';
+import { TimePickerModal, DatePickerModal } from 'react-native-paper-dates';
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default class App extends Component {
-  state = {
-    items: undefined,
-    modalVisible: false,
-    name:'',
-    from:new Date(),
-    openFrom:false,
-    to:new Date(),
-    openTo:false,
-    day:'',
-    bio:'',
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      name: '',
+      description: '',
+      fromHourTime: new Date().getHours(),
+      fromMinuteTime: new Date().getMinutes(),
+      toHourTime: new Date().getHours()+1,
+      toMinuteTime: new Date().getMinutes(),
+      date: new Date(),
+      items: undefined,
+      modalVisible: false,
+      showFromTimePicker: false,
+      showToTimePicker: false,
+      showDatePicker: false,
+    };
+  }
+
+  componentDidMount() {
+    //this.getData();
+  }
+
+  getData = async (key) => {
+    try {
+      const value = await AsyncStorage.getItem(key);
+      if (value !== null) {
+        this.setState({ storedValue: value });
+      }
+    } catch (e) {
+      console.log('Error reading value from AsyncStorage');
+    }
   };
 
-   reservationsKeyExtractor = (item, index) => {
-     return `${item?.reservation?.day}${index}`;
+
+  getAllKeys = async () => {
+    try {
+      return AsyncStorage.getAllKeys();
+    } catch (e) {
+      console.log('Error storing value in AsyncStorage');
+    }
+  }
+
+  storeData = async (key) => {
+    try {
+      console.log(key);
+      await AsyncStorage.setItem("1", this.state);
+      //this.setState({ storedValue: this.state.inputValue });
+    } catch (e) {
+      console.log('Error storing value in AsyncStorage');
+    }
   };
+
+  handleSave = () => {
+    const { fromHourTime, fromMinuteTime, date } = this.state;
+    let day = date.getDate();
+    let month = date.getMonth() + 1;
+    let year = date.getFullYear();
+
+
+    var dateTarget = new Date();
+    dateTarget.setDay(day);
+    dateTarget.setMonth(month-1);
+    dateTarget.setFullYear(year);
+    dateTarget.setHours(fromHourTime);
+    dateTarget.setMinutes(fromMinuteTime);
+    dateTarget.setSeconds(0);
+    dateTarget.setMilliseconds(0); 
+    console.log(dateTarget);
+    
+    //this.storeData(dateTarget.toString());
+
+    this.setState({
+      name: '',
+      description: '',
+      fromHourTime: new Date().getHours(),
+      fromMinuteTime: new Date().getMinutes(),
+      toHourTime: new Date().getHours()+1,
+      toMinuteTime: new Date().getMinutes(),
+      date: new Date(),
+    });
+    this.updateVisibility(false)
+  };
+
+  handleCancel = () => {
+    this.setState({
+      name: '',
+      description: '',
+      fromHourTime: new Date().getHours(),
+      fromMinuteTime: new Date().getMinutes(),
+      toHourTime: new Date().getHours()+1,
+      toMinuteTime: new Date().getMinutes(),
+      date: new Date(),
+    });
+    this.updateVisibility(false)
+  };
+
+  onDismissFrom = () => {
+    this.setState({ showFromTimePicker: false });
+  }
+
+  onConfirmFrom = ({ hours, minutes }) => {
+    this.setState({ showFromTimePicker: false, fromHourTime:hours, fromMinuteTime:minutes });
+  }
+
+
+  onDismissTo = () => {
+    this.setState({ showToTimePicker: false });
+  }
+
+  onConfirmTo = ({ hours, minutes }) => {
+    console.log({ hours, minutes });
+    this.setState({ showToTimePicker: false, toHourTime:hours, toMinuteTime:minutes });
+  }
+
+  onDismissDate = () => {
+    this.setState({ showDatePicker: false });
+  }
+
+  onConfirmDate = ({date}) => {
+    let day = date.getDate();
+    let month = date.getMonth() + 1;
+    let year = date.getFullYear();
+    let currentDate = `${day}-${month}-${year}`;
+    this.setState({ showDatePicker: false,date:currentDate  });
+    
+  }
 
   render() {
+    const { name, 
+      description, 
+      fromHourTime,
+      fromMinuteTime,
+      toHourTime,
+      toMinuteTime,
+      date, 
+      modalVisible, 
+      showFromTimePicker,
+      showToTimePicker,
+      showDatePicker } = this.state;
+
     return (
-      <View style={{flex:1}}>        
+      <SafeAreaProvider style={{flex:1}}>        
       <Agenda
         testID={testIDs.agenda.CONTAINER}
         items={this.state.items}
-        loadItemsForMonth={this.loadItems}
+        loadItemsForMonth={this.loadData}
         selected={'2023-05-16'}
         renderItem={this.renderItem}
         renderEmptyDate={this.renderEmptyDate}
@@ -53,118 +180,101 @@ export default class App extends Component {
       />
         <Modal
           animationType="slide"
+          useNativeDriver={true}
           transparent={true}
-          visible={this.state.modalVisible}
+          visible={modalVisible}
           onRequestClose={() => {
             Alert.alert('Modal has been closed.');
             this.updateVisibility(this.state.changeVisibility);
           }}>
           <View style={styles.centeredView}>
-            <View style={styles.modalView}>
-              <View style={styles.actionsInputs}>
-
-                <TouchableOpacity style={[styles.button, styles.buttonClose]}  onPress={() => this.setOpenFrom(true)}>
-                    <Text style={styles.buttonText}>From</Text>
-                  </TouchableOpacity>
-                  <DatePicker
-                    modal
-                    open={this.state.openFrom}
-                    date={this.state.from}
-                    onConfirm={(date) => {
-                      this.setOpenFrom(false)
-                      this.setFrom(date)
-                    }}
-                    onCancel={() => {
-                      this.setOpenFrom(false)
-                    }}
-                  />
-
-                <Text style={styles.label}>To</Text>
-                <TouchableOpacity style={[styles.button, styles.buttonClose]}  onPress={() => this.setOpenTo(true)}>
-                    <Text style={styles.buttonText}>Close</Text>
-                </TouchableOpacity>
-                  <DatePicker
-                      modal
-                      open={this.state.openTo}
-                      date={this.state.to}
-                      onConfirm={(date) => {
-                        this.setOpenTo(false)
-                        this.setTo(date)
-                      }}
-                      onCancel={() => this.setOpenTo(false)}
-                    />
-              </View>
-              <Text style={styles.label}>Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter Name"
-                value={this.state.name}
-                onChangeText={this.setName}
-              />
-              <Text style={styles.label}>Description</Text>
-              <TextInput
-                style={styles.inputBig}
-                placeholder="Enter Description"
-                value={this.state.bio}
-                onChangeText={this.setBio}
-              />
-
-              <View style={styles.actions}>
-                  <TouchableOpacity style={[styles.button, styles.buttonClose]}  onPress={() =>{}}>
-                    <Text style={styles.buttonText}>Close</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.button, styles.buttonSave]}   onPress={() => this.updateVisibility(this.state.changeVisibility)}>
-                    <Text style={styles.buttonText}>Save</Text>
-                  </TouchableOpacity>
-              </View>
-
-            </View>
+                <View style={styles.modalView}>
+                      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>Add Event</Text>
+                      <Text style={styles.label}>Name</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Enter Name"
+                        value={name}
+                        onChangeText={(name) => this.setState({ name })}
+                      />
+                      <Text style={styles.label}>Description</Text>
+                      <TextInput
+                        style={styles.inputBig}
+                        placeholder="Enter Description"
+                        value={description}
+                        onChangeText={(description) => this.setState({ description })}
+                        multiline
+                      />
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, marginTop:20 }}>
+                    <Button onPress={() => this.setState({ showFromTimePicker: true })} uppercase={false} title='Pick from' />
+                      <TimePickerModal
+                        visible={showFromTimePicker}
+                        onDismiss={this.onDismissFrom}
+                        onConfirm={this.onConfirmFrom}
+                        hours={fromHourTime}
+                        minutes={fromMinuteTime}
+                      />
+                    <View style={{width:30}}></View>
+                    <Button onPress={() => this.setState({ showToTimePicker: true })} uppercase={false}  title='Pick to'/>
+                      <TimePickerModal
+                          visible={showToTimePicker}
+                          onDismiss={this.onDismissTo}
+                          onConfirm={this.onConfirmTo}
+                          hours={toHourTime}
+                          minutes={toMinuteTime}
+                      />
+                    </View>
+                    <View style={styles.divider} />
+                    <View style={{ flexDirection: 'row' }}>
+                    <Button onPress={() => this.setState({showDatePicker:true})} uppercase={false} mode="outlined" title='Pick single date' />
+                        <DatePickerModal
+                          locale='en'
+                          mode="single"
+                          visible={showDatePicker}
+                          onDismiss={this.onDismissDate}
+                          date={date}
+                          onConfirm={this.onConfirmDate}
+                        />
+                    </View>
+                    <View style={styles.divider} />
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
+                      <Button title="Save" onPress={this.handleSave} style={styles.buttonSave}  />
+                      <View style={{width:30}}></View>
+                      <Button title="Close" color='red' onPress={this.handleCancel} style={[styles.button, styles.buttonClose]} />
+                  </View>
+                </View>
           </View>
         </Modal>
-        <ActionButton buttonColor="rgba(231,76,60,1)">
-          <ActionButton.Item 
-          buttonColor='#9b59b6' 
-          title="New Task" 
-          useNativeDriver={false}
-          onPress={() => this.updateVisibility(this.state.changeVisibility)}
-          >
-            <Text>+</Text>
-          </ActionButton.Item>
+        <ActionButton buttonColor="rgba(231,76,60,1)" useNativeDriver={false} onPress={() => this.updateVisibility(this.state.changeVisibility)}>
         </ActionButton>
-      </View>
+      </SafeAreaProvider>
     );
   }
 
-  setFrom = (val) => {
-    this.setState({from:val})
-  }
+  reservationsKeyExtractor = (item, index) => {
+    return `${item?.reservation?.day}${index}`;
+ };
 
-  setOpenFrom = (val) => {
-    this.setState({openFrom:val})
-  }
-
-  setTo = (val) => {
-    this.setState({to:val})
-  }
-
-  setOpenTo = (val) => {
-    this.setState({openTo:val})
-  }
-
-  setName = (val) => {
-    this.setState({name:val})
-  }
-
-  setBio = (val) => {
-    this.setState({bio:val})
-  }
-
-  setEmail = (val) => {
-    this.setState({email:val})
-  }
 
   updateVisibility = (val) =>{
     this.setState({modalVisible:val})
+  }
+
+  loadData = (day) =>{
+    const items = this.state.items || {};
+    const newItems = {};
+    /*
+    let keys = this.getAllKeys();
+    console.log('Hello ')
+    console.log(keys)
+    for(key in keys){
+      let val = this.getData(key);
+      newItems[key] = val;
+    }
+    */
+    this.setState({
+      items: newItems
+    });
   }
 
   loadItems = (day) => {
@@ -206,21 +316,15 @@ export default class App extends Component {
     const fontSize = isFirst ? 16 : 14;
     const color = isFirst ? 'black' : 'gray';
 
-    const descFontSize = 12
-    const descrColor = 'gray';
-
-    const timeFontSize = 18
-    const timeColor = 'black';
-
     return (
       <TouchableOpacity
         testID={testIDs.agenda.ITEM}
         style={[styles.item, {height: reservation.height}]}
         onPress={() => Alert.alert(reservation.name)}
       >
-        <Text style={{timeFontSize, timeColor}}>{reservation.start} - {reservation.end}</Text>
+        <Text style={{fontSize, color}}>{reservation.start} - {reservation.end}</Text>
         <Text style={{fontSize, color}}>{reservation.name}</Text>
-        <Text style={{descFontSize, descrColor}}>{reservation.description}</Text>        
+        <Text style={{fontSize, color}}>{reservation.description}</Text>        
       </TouchableOpacity>
     );
   }
@@ -371,5 +475,16 @@ const styles = StyleSheet.create({
   actionsInputs: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  marginL:{
+    marginLeft:50,
+    height:'20%'
+  },
+  divider: {
+    borderBottomWidth: 2,
+    borderBottomColor: 'grey',
+    marginVertical: 10,
+    backgroundColor:'yellow',
+    width:'100%'
   },
 });
