@@ -56,32 +56,33 @@ export default class App extends Component {
 
   importData = async () => {
     try {
-      this.setState({fetchedData:[]})
-      const fetchedData = this.state.fetchedData || {};
       const keys = await AsyncStorage.getAllKeys();
-      if(keys.length!=0){      
-        for(let key of keys){
-          let value = await AsyncStorage.getItem(key);
-          let parsedJSON = JSON.parse(value);
-          console.log(parsedJSON)
-          
-          fetchedData.push({
-            start: ''+parsedJSON.fromHourTime+':'+(parsedJSON.fromMinuteTime < 10 ? '0'+parsedJSON.fromMinuteTime : parsedJSON.fromMinuteTime),
-            end: ''+parsedJSON.toHourTime+':'+(parsedJSON.toMinuteTime < 10 ? '0'+parsedJSON.toMinuteTime : parsedJSON.toMinuteTime),
-            name: parsedJSON.name,
-            description: parsedJSON.description,
-            height: 100, // Math.max(50, Math.floor(Math.random() * 150)),
-            completed: false
-          });          
-        }
-        this.setState({
-          fetchedData: fetchedData
-        });      
+      if (keys.length === 0) {
+        return;
       }
+  
+      const fetchedData = [];
+  
+      for (const key of keys) {
+        const value = await AsyncStorage.getItem(key);
+        const parsedJSON = JSON.parse(value);
+  
+        fetchedData.push({
+          start: `${parsedJSON.fromHourTime}:${parsedJSON.fromMinuteTime < 10 ? '0' : ''}${parsedJSON.fromMinuteTime}`,
+          end: `${parsedJSON.toHourTime}:${parsedJSON.toMinuteTime < 10 ? '0' : ''}${parsedJSON.toMinuteTime}`,
+          name: parsedJSON.name,
+          description: parsedJSON.description,
+          height: 100, // Math.max(50, Math.floor(Math.random() * 150)),
+          completed: false,
+        });
+      }
+  
+      this.setState({ fetchedData });
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }
+  };
+  
 
   storeData = async (key) => {
     try {
