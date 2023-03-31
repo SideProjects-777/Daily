@@ -12,7 +12,7 @@ export default class App extends Component {
       <NavigationContainer>
         <Stack.Navigator>
           <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="New Event" component={NewEvent} />
+          <Stack.Screen name="Add" component={NewEvent} />
         </Stack.Navigator>
       </NavigationContainer>
     );
