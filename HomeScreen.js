@@ -14,10 +14,12 @@ export default class HomeScreen extends Component {
       items: undefined,
       today:new Date(),
       fetchedData:[],
+      keys:[],
     };
   }
 
   componentDidMount() {
+    this.clean();
     this.importData();
     //this.getData();
   }
@@ -41,10 +43,22 @@ export default class HomeScreen extends Component {
     }
   }
 
+  updateData = async (key,data) => {
+    try {
+      await AsyncStorage.setItem(
+        key,
+        data,
+      );
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
 
   importData = async () => {
     try {
       const keys = await AsyncStorage.getAllKeys();
+      console.log(keys)
       if (keys.length === 0) {
         return;
       }
@@ -56,14 +70,15 @@ export default class HomeScreen extends Component {
         const parsedJSON = JSON.parse(value);
   
         fetchedData.push({
-          start: `${parsedJSON.fromHourTime}:${parsedJSON.fromMinuteTime < 10 ? '0' : ''}${parsedJSON.fromMinuteTime}`,
-          end: `${parsedJSON.toHourTime}:${parsedJSON.toMinuteTime < 10 ? '0' : ''}${parsedJSON.toMinuteTime}`,
+          start: parsedJSON.start,
+          end: parsedJSON.end,
           name: parsedJSON.name,
           description: parsedJSON.description,
-          height: this.generateHeight(parsedJSON.fromHourTime, parsedJSON.fromMinuteTime,parsedJSON.toHourTime,parsedJSON.toMinuteTime),
+          height: parsedJSON.height,
            // Math.max(50, Math.floor(Math.random() * 150)),
-          completed: parsedJSON.completed!=undefined ? parsedJSON.completed : false,
-          date:parsedJSON.date 
+          completed: parsedJSON.completed,
+          date:parsedJSON.date,
+          key:key,
         });
       }
   
@@ -73,13 +88,7 @@ export default class HomeScreen extends Component {
     }
   };
 
-  generateHeight = (sHour, sMinute, eHour, eMinute) => {    
-    sMinute = sMinute < 10 ? '0'+sMinute : sMinute
-    eMinute = sMinute < 10 ? '0'+eMinute : eMinute
-    startTime = parseInt(''+sHour+''+sMinute);
-    endTime = parseInt(''+eHour+''+eMinute);
-    return endTime - startTime;
-  }
+
   
   render() {
     return (
@@ -126,8 +135,22 @@ export default class HomeScreen extends Component {
     setTimeout(() => {this.importData(day);}, 1000);
   }
 
+  createCompletness = (reservation) =>{
+  Alert.alert('Is this event completed?', reservation.name, [
+    {
+      text: 'Close',
+      onPress: () => console.log('Cancel Pressed'),
+      style: 'cancel',
+    },
+    {text: 'Completed', onPress: () => {
+      reservation.completed = true
+      this.updateData(reservation.key,reservation)
+    }},
+  ]);
+  console.log(reservation);
+  }
+
   loadItems = (day) => {
-    //console.log(this.state.fetchedData)
     const items = {};
 
     setTimeout(() => {
@@ -170,14 +193,78 @@ export default class HomeScreen extends Component {
 
     return (
       <TouchableOpacity
-      testID={testIDs.agenda.ITEM}
-      style={[styles.item, {height: reservation.height}]}
-      onPress={() => Alert.alert(reservation.name)}>
+      onPress={() => this.createCompletness(reservation)} 
+      style={{
+        width: '95%',
+        height: reservation.height,
+        marginBottom:10,
+        marginTop:5,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'white',
+        borderRadius: 20,
+        overflow: 'hidden',
+      }}>
+        {this.parseBody(reservation)}
         <Text style={cssTime}>{reservation.start} - {reservation.end}</Text>
         <Text style={cssName}>{reservation.name}</Text>
-        <Text style={cssDescription}>{reservation.description}</Text>        
-      </TouchableOpacity>
+        <Text style={cssDescription}>{reservation.description}</Text>  
+    </TouchableOpacity>
+
     );
+  }
+
+  parseBody = (reservation) => {
+    console.log(reservation.completed)
+    if(reservation.completed){
+      return(
+      <View
+      style={{
+        position: 'absolute',
+        alignItems: 'center',
+        justifyContent: 'center',
+        right: 10,
+        top: 10,
+      }}>
+      <View
+      style={{
+        position: 'absolute',
+        width: 120,
+        height: 45,
+        backgroundColor: 'green',
+        transform: [{rotate: '45deg'}],
+      }}
+    />
+    <Text style={{color: 'white', fontSize: 15, fontWeight: 'bold'}}>
+      ✓
+    </Text>
+    </View>
+      );
+    }else{
+      return(
+        <View
+        style={{
+          position: 'absolute',
+          alignItems: 'center',
+          justifyContent: 'center',
+          right: 10,
+          top: 10,
+        }}>
+        <View
+        style={{
+          position: 'absolute',
+          width: 120,
+          height: 45,
+          backgroundColor: 'red',
+          transform: [{rotate: '45deg'}],
+        }}
+      />
+      <Text style={{color: 'white', fontSize: 15, fontWeight: 'bold'}}>
+        X
+      </Text>
+      </View>
+      );
+    }
   }
 
   parseDateIntoStringAndVice = (data) => {

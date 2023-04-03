@@ -2,15 +2,14 @@ import React, { Component } from 'react';
 import { View, Text, Button, StyleSheet, TextInput } from 'react-native';
 import { TimePickerModal, DatePickerModal } from 'react-native-paper-dates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default class NewEvent extends Component {
   state = {
     name: '',
     description: '',
-    fromHourTime: new Date().getHours(),
-    fromMinuteTime: new Date().getMinutes(),
-    toHourTime: new Date().getHours() + 1,
-    toMinuteTime: new Date().getMinutes(),
+    start:'',
+    end: '',
     date: new Date(),
     showFromTimePicker: false,
     showToTimePicker: false,
@@ -39,10 +38,8 @@ export default class NewEvent extends Component {
     this.setState({
       name: '',
       description: '',
-      fromHourTime: new Date().getHours(),
-      fromMinuteTime: new Date().getMinutes(),
-      toHourTime: new Date().getHours() + 1,
-      toMinuteTime: new Date().getMinutes(),
+      start:'',
+      end: '',
       date: new Date(),
       showFromTimePicker: false,
       showToTimePicker: false,
@@ -54,29 +51,35 @@ export default class NewEvent extends Component {
     this.setState({
       name: '',
       description: '',
-      fromHourTime: new Date().getHours(),
-      fromMinuteTime: new Date().getMinutes(),
-      toHourTime: new Date().getHours() + 1,
-      toMinuteTime: new Date().getMinutes(),
+      start:'',
+      end: '',
       date: new Date(),
       showFromTimePicker: false,
       showToTimePicker: false,
       showDatePicker: false,
     });
+    this.props.navigation.navigate('Home');
   };
+
+  generateHeight = (sHour, sMinute, eHour, eMinute) => {    
+    sMinute = sMinute < 10 ? '0'+sMinute : sMinute
+    eMinute = sMinute < 10 ? '0'+eMinute : eMinute
+    startTime = parseInt(''+sHour+''+sMinute);
+    endTime = parseInt(''+eHour+''+eMinute);
+    return endTime - startTime;
+  }
+
 
   storeData = async (key) => {
     try {
-      
+      let height= this.generateHeight(this.state.fromHourTime, this.state.fromMinuteTime,this.state.toHourTime,this.state.toMinuteTime);
       var body = {
         'name':this.state.name,
         'description':this.state.description,
-        'completed': this.state.completed,
-        'fromHourTime': this.state.fromHourTime,
-        'fromMinuteTime': this.state.fromMinuteTime,
-        'toHourTime': this.state.toHourTime,
-        'toMinuteTime': this.state.toMinuteTime,
+        'start':this.state.start,
+        'end':this.state.end,
         'date': this.state.date,
+        'height':height,
         'completed':false
       }
       const jsonString = JSON.stringify(body);      
@@ -99,7 +102,9 @@ export default class NewEvent extends Component {
   };
 
   onConfirmFrom = ({ hours, minutes }) => {
-    this.setState({ showFromTimePicker: false, fromHourTime: hours, fromMinuteTime: minutes });
+    let parsedMinutes  = `${minutes < 10 ? '0'+minutes : minutes}`;
+    let finalAnswer = hours+':'+parsedMinutes
+    this.setState({ showFromTimePicker: false, start:finalAnswer });
   };
 
   onDismissTo = () => {
@@ -107,7 +112,9 @@ export default class NewEvent extends Component {
   };
 
   onConfirmTo = ({ hours, minutes }) => {
-    this.setState({ showToTimePicker: false, toHourTime: hours, toMinuteTime: minutes });
+    let parsedMinutes  = `${minutes < 10 ? '0'+minutes : minutes}`;
+    let finalAnswer = hours+':'+parsedMinutes
+    this.setState({ showToTimePicker: false, end:finalAnswer});
   };
 
   onDismissDate = () => {
@@ -118,20 +125,28 @@ export default class NewEvent extends Component {
     this.setState({ showDatePicker: false, date });
   };
 
+  formatDate = (date) =>{
+    const formattedDate = date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).split('/').join('-');
+    return formattedDate
+  }
+
 
   render() {
     const { name, 
       description, 
-      fromHourTime,
-      fromMinuteTime,
-      toHourTime,
-      toMinuteTime,
+      start,
+      end,
       date,
       showFromTimePicker,
       showToTimePicker,
       showDatePicker } = this.state;
 
     return (
+      <SafeAreaProvider>
         <View style={styles.centeredView}>
         <View style={styles.modalView}>
               <Text style={styles.label}>Name</Text>
@@ -149,45 +164,60 @@ export default class NewEvent extends Component {
                 onChangeText={(description) => this.setState({ description })}
                 multiline
               />
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, marginTop:20 }}>
+            <View style={{width:'100%', height:1, marginTop:15}}></View>
             <Button onPress={() => this.setState({ showFromTimePicker: true })} uppercase={false} title='Pick from' />
+            <View style={{width:'100%', height:1, marginTop:15}}></View>
+              <TextInput
+                style={styles.input}
+                value={start.toString()}
+                editable={false}
+                placeholder="Duration From"
+              />
               <TimePickerModal
                 visible={showFromTimePicker}
                 onDismiss={this.onDismissFrom}
                 onConfirm={this.onConfirmFrom}
-                hours={fromHourTime}
-                minutes={fromMinuteTime}
               />
-            <View style={{width:30}}></View>
+              <View style={{width:'100%', height:1, marginTop:15}}></View>
             <Button onPress={() => this.setState({ showToTimePicker: true })} uppercase={false}  title='Pick to'/>
+            <View style={{width:'100%', height:1, marginTop:15}}></View>
+            <TextInput
+                style={styles.input}
+                value={end.toString()}
+                editable={false}
+                placeholder="Duration To"
+              />
               <TimePickerModal
                   visible={showToTimePicker}
                   onDismiss={this.onDismissTo}
                   onConfirm={this.onConfirmTo}
-                  hours={toHourTime}
-                  minutes={toMinuteTime}
               />
-            </View>
-            <View style={styles.divider} />
-            <View style={{ flexDirection: 'row' }}>
+            <View style={{width:'100%', height:1, marginTop:15}}></View>
             <Button onPress={() => this.setState({showDatePicker:true})} uppercase={false} mode="outlined" title='Pick single date' />
+            <View style={{width:'100%', height:1, marginTop:15}}></View>
+            <TextInput
+                style={styles.input}
+                value={this.formatDate(date)}
+                editable={false}
+                placeholder="Event Day"
+              />
                 <DatePickerModal
-                  locale={'en'}
+                  locale="en"
                   mode="single"
                   visible={showDatePicker}
                   onDismiss={this.onDismissDate}
                   date={date}
                   onConfirm={this.onConfirmDate}
                 />
-            </View>
-            <View style={styles.divider} />
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
+            
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 }}>
               <Button title="Save" onPress={this.handleSave} style={styles.buttonSave}  />
               <View style={{width:30}}></View>
               <Button title="Close" color='red' onPress={this.handleCancel} style={[styles.button, styles.buttonClose]} />
           </View>
         </View>
   </View>
+  </SafeAreaProvider>
     );
   }
 }
@@ -198,7 +228,7 @@ const styles = StyleSheet.create({
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom:90
+      marginBottom:50
     },
     modalView: {
       width: '90%',
@@ -226,6 +256,10 @@ const styles = StyleSheet.create({
     label: {
       marginTop: 20,
       marginBottom: 15,
+    },
+    buttonStyle:{
+      marginTop:50,
+      marginBottom:100,
     },
     input: {
       width:'90%',
