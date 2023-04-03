@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
-import { View, Text, Button, StyleSheet, TextInput } from 'react-native';
+import { View, Text, Button, StyleSheet, TextInput, ScrollView } from 'react-native';
 import { TimePickerModal, DatePickerModal } from 'react-native-paper-dates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default class NewEvent extends Component {
   state = {
@@ -133,7 +132,7 @@ export default class NewEvent extends Component {
       showDatePicker } = this.state;
 
     return (
-      <SafeAreaProvider>
+      <ScrollView>
         <View style={styles.centeredView}>
         <View style={styles.modalView}>
               <Text style={styles.label}>Name</Text>
@@ -204,7 +203,7 @@ export default class NewEvent extends Component {
           </View>
         </View>
   </View>
-  </SafeAreaProvider>
+  </ScrollView>
     );
   }
 }
@@ -215,7 +214,9 @@ const styles = StyleSheet.create({
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom:50
+      height:'100%',
+      marginBottom:100,
+      marginTop:60
     },
     modalView: {
       width: '90%',

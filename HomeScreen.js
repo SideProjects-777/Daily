@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Alert, Modal,StyleSheet, Text,  Animated, Easing, View, TouchableOpacity, ActivityIndicator} from 'react-native';
+import {Alert, Modal,StyleSheet, Text,  Animated, Easing, View, TouchableOpacity, ScrollView} from 'react-native';
 import {Agenda} from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ActionButton from 'react-native-action-button';
@@ -173,6 +173,7 @@ export default class HomeScreen extends Component {
         onPress={() => this.props.navigation.navigate('Add')}
         />
       </SafeAreaProvider>
+      
     );
     }
 
