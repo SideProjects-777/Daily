@@ -1,27 +1,41 @@
 import React, {Component} from 'react';
-import {Alert, Modal,StyleSheet, Text, Button, View, TouchableOpacity, TextInput} from 'react-native';
+import {Alert, Modal,StyleSheet, Text,  Animated, Easing, View, TouchableOpacity, ActivityIndicator} from 'react-native';
 import {Agenda} from 'react-native-calendars';
-import testIDs from './dataSet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ActionButton from 'react-native-action-button';
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
 
 export default class HomeScreen extends Component {
 
   constructor(props) {
     super(props);
+    this.spinValue = new Animated.Value(0);
     this.state = {
-      items: undefined,
       today:new Date(),
+      loading:false,
       fetchedData:[],
       keys:[],
     };
   }
 
   componentDidMount() {
-    this.clean();
+    //this.clean();
     this.importData();
-    //this.getData();
+    this.spin();
+  }
+
+  spin() {
+    this.spinValue.setValue(0);
+    Animated.timing(
+      this.spinValue,
+      {
+        toValue: 1,
+        duration: 3000,
+        easing: Easing.linear,
+        useNativeDriver: true
+      }
+    ).start(() => this.spin());
   }
 
   getData = async (key) => {
@@ -47,19 +61,29 @@ export default class HomeScreen extends Component {
     try {
       await AsyncStorage.setItem(
         key,
-        data,
+        JSON.stringify(data),
       );
     } catch (error) {
       console.error(error)
     }
   }
 
+  deleteFromStorage = async (key) =>{
+    try {
+      await AsyncStorage.removeItem(key);
+    }
+    catch(error) {
+      console.error(error)
+    }
+  }
+
 
   importData = async () => {
+    this.setState({loading:true});
     try {
       const keys = await AsyncStorage.getAllKeys();
-      console.log(keys)
       if (keys.length === 0) {
+        this.setState({ fetchedData:[] });
         return;
       }
   
@@ -68,21 +92,43 @@ export default class HomeScreen extends Component {
       for (const key of keys) {
         const value = await AsyncStorage.getItem(key);
         const parsedJSON = JSON.parse(value);
-  
-        fetchedData.push({
+        var ourDate = this.parseDateIntoStringAndVice(parsedJSON.date);
+
+        if (!fetchedData[ourDate]) {
+          fetchedData[ourDate] = [];        
+        } 
+
+        fetchedData[ourDate].push({
           start: parsedJSON.start,
           end: parsedJSON.end,
           name: parsedJSON.name,
           description: parsedJSON.description,
-          height: parsedJSON.height,
+          height:Math.max(100, Math.floor(Math.random() * 150)), //parsedJSON.height,
            // Math.max(50, Math.floor(Math.random() * 150)),
           completed: parsedJSON.completed,
           date:parsedJSON.date,
           key:key,
         });
       }
-  
+
+      let today = new Date();
+      for(let i=1;i<365;i++){
+        today.setDate(today.getDate() + 1);
+        let val = this.parseDateIntoStringAndVice(today);
+        if (!fetchedData[val]) {
+          fetchedData[val] = [];        
+        }
+      }
+      today = new Date();
+      for(let i=1;i<365;i++){
+        today.setDate(today.getDate() - 1);
+        let val = this.parseDateIntoStringAndVice(today);
+        if (!fetchedData[val]) {
+          fetchedData[val] = [];        
+        }
+      }
       this.setState({ fetchedData });
+      this.setState({loading:false});
     } catch (error) {
       console.error(error);
     }
@@ -91,12 +137,15 @@ export default class HomeScreen extends Component {
 
   
   render() {
+    //console.log(this.state.fetchedData);
+    const { loading } = this.state;
+    if(!loading){
     return (
       <SafeAreaProvider style={{flex:1}}>        
       <Agenda
-        testID={testIDs.agenda.CONTAINER}
-        items={this.state.items}
-        loadItemsForMonth={this.loadItems}
+        //testID={testIDs.agenda.CONTAINER}
+        items={this.state.fetchedData}
+        loadItemsForMonth={this.loadItemsForMonth}
         selected={this.state.today}
         renderItem={this.renderItem}
         renderEmptyDate={this.renderEmptyDate}
@@ -125,58 +174,90 @@ export default class HomeScreen extends Component {
         />
       </SafeAreaProvider>
     );
+    }
+
+    const spin = this.spinValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0deg', '360deg']
+    });
+    return (
+      <View style={styles.container}>
+        <Animated.Text
+          style={[styles.logo, { transform: [{ rotate: spin }] }]}
+        >
+          Daily App
+        </Animated.Text>
+        <Text style={styles.text}>Loading...</Text>
+      </View>
+    );
   }
 
   reservationsKeyExtractor = (item, index) => {
     return `${item?.reservation?.day}${index}`;
  };
 
-  loadData = (day) =>{   
-    setTimeout(() => {this.importData(day);}, 1000);
-  }
-
   createCompletness = (reservation) =>{
-  Alert.alert('Is this event completed?', reservation.name, [
-    {
-      text: 'Close',
-      onPress: () => console.log('Cancel Pressed'),
-      style: 'cancel',
-    },
-    {text: 'Completed', onPress: () => {
-      reservation.completed = true
-      this.updateData(reservation.key,reservation)
-    }},
-  ]);
-  console.log(reservation);
+    if(!reservation.completed){
+      Alert.alert('Is this event completed?', reservation.name, [
+        {
+          text: 'Close',
+          onPress: () => console.log('Cancel Pressed'),
+          style: 'cancel',
+        },
+        {text: 'Completed', onPress: () => {
+          reservation.completed = true
+          this.updateData(reservation.key,reservation);
+          this.importData();
+        }},
+      ]);
+    }else{
+      Alert.alert('Do you want to remove the event?', reservation.name, [
+        {
+          text: 'Close',
+          onPress: () => console.log('Cancel Pressed'),
+          style: 'cancel',
+        },
+        {text: 'Remove', onPress: () => {
+          this.deleteFromStorage(reservation.key);
+          this.importData();
+        }},
+      ]);
+    }
+
+
+
   }
 
-  loadItems = (day) => {
-    const items = {};
+  
+  loadItemsForMonth = (day) => {
+    //console.log(day)
+    const fetchedData = this.state.fetchedData;
+    if (!fetchedData[day.dateString]) {
+      fetchedData[day.dateString] = [];        
+    }
+    let buildDate = new Date();
+    buildDate.setFullYear(day.year,day.month,day.day);
+    let nextDay = new Date(buildDate);
+    for(let i=1;i<31;i++){
+      nextDay.setDate(nextDay.getDate() + 1);
+      let val = this.parseDateIntoStringAndVice(nextDay);
+      if (!fetchedData[val]) {
+        fetchedData[val] = [];        
+      }
+    } 
+    for(let i=1;i<31;i++){
+      nextDay.setDate(nextDay.getDate() -1);
+      let val = this.parseDateIntoStringAndVice(nextDay);
+      if (!fetchedData[val]) {
+        fetchedData[val] = [];        
+      }
+    } 
 
-    setTimeout(() => {
-      for (data of this.state.fetchedData){
-        var ourDate = this.parseDateIntoStringAndVice(data.date);
-        if (!items[ourDate]) {
-          items[ourDate] = [];        
-        }  
-          items[ourDate].push({
-            start: data.start,
-            end: data.end,
-            name: data.name,
-            description:data.description,
-            height: data.height, // Math.max(50, Math.floor(Math.random() * 150)),
-            day: ourDate,
-            completed: data.completed
-          });
-      }      
-      const newItems = {};
-      Object.keys(items).forEach(key => {
-        newItems[key] = items[key];
-      });
       this.setState({
-        items: newItems
+        fetchedData
       });
-    }, 1000);
+    
+    
   }
 
   renderItem = (reservation, isFirst) => {
@@ -193,7 +274,7 @@ export default class HomeScreen extends Component {
 
     return (
       <TouchableOpacity
-      onPress={() => this.createCompletness(reservation)} 
+      onPress={() => this.createCompletness(reservation,isFirst)} 
       style={{
         width: '95%',
         height: reservation.height,
@@ -215,7 +296,6 @@ export default class HomeScreen extends Component {
   }
 
   parseBody = (reservation) => {
-    console.log(reservation.completed)
     if(reservation.completed){
       return(
       <View
@@ -277,10 +357,10 @@ export default class HomeScreen extends Component {
     return formattedDate
   }
 
-  renderEmptyDate = () => {
+  renderEmptyDate = ({date}) => {
     return (
       <View style={styles.emptyDate}>
-        <Text>This is empty date!</Text>
+        <Text>No events!</Text>
       </View>
     );
   }
@@ -303,6 +383,11 @@ const styles = StyleSheet.create({
     padding: 10,
     marginRight: 10,
     marginTop: 17
+  },
+  emptyDate: {
+    height: 15,
+    flex: 1,
+    paddingTop: 30
   },
   time:{
     fontSize:18,
@@ -327,5 +412,22 @@ const styles = StyleSheet.create({
   descriptionCancelled:{
     fontSize:14,
     color:'grey'
-  }  
+  },
+  //beaty spinner
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff'
+  },
+  logo: {
+    fontSize: 40,
+    fontWeight: 'bold',
+    color: '#333'
+  },
+  text: {
+    marginTop: 20,
+    fontSize: 20,
+    color: '#333'
+  }
 });

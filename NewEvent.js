@@ -17,21 +17,8 @@ export default class NewEvent extends Component {
   };
 
   handleSave = () => {
-    const { fromHourTime, fromMinuteTime, date } = this.state;
-    const day = date.getDate();
-    const month = date.getMonth() + 1;
-    const year = date.getFullYear();
 
-    const dateTarget = new Date(
-      year,
-      month - 1,
-      day,
-      fromHourTime,
-      fromMinuteTime,
-      0,
-      this.generateMilliSeconds()
-    );
-    const key = dateTarget.getTime() * 1000000;
+    const key =  Math.random().toString(36).substring(2, 14);
 
     this.storeData(key.toString());
 
@@ -61,18 +48,18 @@ export default class NewEvent extends Component {
     this.props.navigation.navigate('Home');
   };
 
-  generateHeight = (sHour, sMinute, eHour, eMinute) => {    
-    sMinute = sMinute < 10 ? '0'+sMinute : sMinute
-    eMinute = sMinute < 10 ? '0'+eMinute : eMinute
-    startTime = parseInt(''+sHour+''+sMinute);
-    endTime = parseInt(''+eHour+''+eMinute);
+  generateHeight = (start,end) => {    
+    start = start.split(':');
+    end = end.split(':');
+    startTime = parseInt(''+start[0]+''+start[1]);
+    endTime = parseInt(''+end[0]+''+end[1]);
     return endTime - startTime;
   }
 
 
   storeData = async (key) => {
     try {
-      let height= this.generateHeight(this.state.fromHourTime, this.state.fromMinuteTime,this.state.toHourTime,this.state.toMinuteTime);
+      let height= this.generateHeight(this.state.start,this.state.end);
       var body = {
         'name':this.state.name,
         'description':this.state.description,
