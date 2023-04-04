@@ -18,7 +18,7 @@ export default class NewEvent extends Component {
   handleSave = () => {
 
     const key =  Math.random().toString(36).substring(2, 14);
-
+    this.setState({key:key});
     this.storeData(key.toString());
 
     this.setState({
@@ -30,7 +30,9 @@ export default class NewEvent extends Component {
       showFromTimePicker: false,
       showToTimePicker: false,
       showDatePicker: false,
+      key:''
     });
+    this.props.navigation.navigate('Home',{key:key});
   };
 
   handleCancel = () => {
@@ -55,6 +57,15 @@ export default class NewEvent extends Component {
     return endTime - startTime;
   }
 
+  parseDateLatest = (date) =>{
+    let {start} = this.state;
+    start = start.split(':');
+    let hour = parseInt(start[0]);
+    let minute = parseInt(start[1]);
+    date.setUTCHours(hour,minute);    
+    return date;
+  }
+
 
   storeData = async (key) => {
     try {
@@ -64,7 +75,7 @@ export default class NewEvent extends Component {
         'description':this.state.description,
         'start':this.state.start,
         'end':this.state.end,
-        'date': this.state.date,
+        'date': this.parseDateLatest(this.state.date),
         'height':height,
         'completed':false
       }
@@ -72,6 +83,7 @@ export default class NewEvent extends Component {
       await AsyncStorage.setItem(key, jsonString);
       //this.setState({ storedValue: this.state.inputValue });
     } catch (e) {
+      console.error(e);
       console.log('Error storing value in AsyncStorage');
     }
   };

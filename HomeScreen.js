@@ -15,15 +15,68 @@ export default class HomeScreen extends Component {
       today:new Date(),
       loading:false,
       fetchedData:[],
-      keys:[],
+      loadedKeys:[],
     };
   }
 
   componentDidMount() {
     //this.clean();
     this.importData();
-    this.spin();
+    this.freeData();
+    this.spin();   
   }
+
+  componentDidUpdate(){
+    if(this.props.route!==undefined){
+      const {route} = this.props;
+      if(route.params!==undefined){
+        const { key } = route.params;
+        if(key!==undefined){
+          const {loadedKeys} = this.state;
+          for(kk of loadedKeys){
+            if(kk==key){
+              return;
+            }
+          }
+          this.setState({loading:true});
+          this.retrieveData(key);          
+          loadedKeys.push(key);
+          this.setState({loadedKeys});
+          this.setState({loading:false});
+
+
+        }
+      }
+    }    
+  }
+
+  retrieveData = async (key) => {
+    try {
+      const value = await AsyncStorage.getItem(key);
+      if (value !== null) {
+        const parsedJSON = JSON.parse(value);
+        var ourDate = this.parseDateIntoStringAndVice(parsedJSON.date);
+
+        if (!this.state.fetchedData[ourDate]) {
+          this.state.fetchedData[ourDate] = [];        
+        } 
+
+        this.state.fetchedData[ourDate].push({
+          start: parsedJSON.start,
+          end: parsedJSON.end,
+          name: parsedJSON.name,
+          description: parsedJSON.description,
+          height: 100,//parsedJSON.height,
+           // Math.max(50, Math.floor(Math.random() * 150)),
+          completed: parsedJSON.completed,
+          date:parsedJSON.date,
+          key:key,
+        });
+      }
+    } catch (error) {
+      // Error retrieving data
+    }
+  };
 
   spin() {
     this.spinValue.setValue(0);
@@ -77,6 +130,28 @@ export default class HomeScreen extends Component {
     }
   }
 
+  freeData = () =>{
+    const fetchedData = this.state.fetchedData;
+    let today = new Date();
+    for(let i=1;i<365;i++){
+      today.setDate(today.getDate() + 1);
+      let val = this.parseDateIntoStringAndVice(today);
+      if (!fetchedData[val]) {
+        fetchedData[val] = [];        
+      }
+    }
+    today = new Date();
+    for(let i=1;i<365;i++){
+      today.setDate(today.getDate() - 1);
+      let val = this.parseDateIntoStringAndVice(today);
+      if (!fetchedData[val]) {
+        fetchedData[val] = [];        
+      }
+    }
+    this.setState({ fetchedData });
+    this.setState({loading:false});
+  }
+
 
   importData = async () => {
     this.setState({loading:true});
@@ -86,7 +161,7 @@ export default class HomeScreen extends Component {
         this.setState({ fetchedData:[] });
         return;
       }
-  
+      this.setState({loadedKeys:keys});
       const fetchedData = [];
   
       for (const key of keys) {
@@ -103,32 +178,13 @@ export default class HomeScreen extends Component {
           end: parsedJSON.end,
           name: parsedJSON.name,
           description: parsedJSON.description,
-          height:Math.max(100, Math.floor(Math.random() * 150)), //parsedJSON.height,
-           // Math.max(50, Math.floor(Math.random() * 150)),
+          height:100,
           completed: parsedJSON.completed,
           date:parsedJSON.date,
           key:key,
         });
       }
-
-      let today = new Date();
-      for(let i=1;i<365;i++){
-        today.setDate(today.getDate() + 1);
-        let val = this.parseDateIntoStringAndVice(today);
-        if (!fetchedData[val]) {
-          fetchedData[val] = [];        
-        }
-      }
-      today = new Date();
-      for(let i=1;i<365;i++){
-        today.setDate(today.getDate() - 1);
-        let val = this.parseDateIntoStringAndVice(today);
-        if (!fetchedData[val]) {
-          fetchedData[val] = [];        
-        }
-      }
       this.setState({ fetchedData });
-      this.setState({loading:false});
     } catch (error) {
       console.error(error);
     }
@@ -137,7 +193,6 @@ export default class HomeScreen extends Component {
 
   
   render() {
-    //console.log(this.state.fetchedData);
     const { loading } = this.state;
     if(!loading){
     return (
@@ -209,6 +264,7 @@ export default class HomeScreen extends Component {
           reservation.completed = true
           this.updateData(reservation.key,reservation);
           this.importData();
+          this.freeData();
         }},
       ]);
     }else{
@@ -221,17 +277,15 @@ export default class HomeScreen extends Component {
         {text: 'Remove', onPress: () => {
           this.deleteFromStorage(reservation.key);
           this.importData();
+          this.freeData();
         }},
       ]);
     }
-
-
-
   }
 
   
   loadItemsForMonth = (day) => {
-    //console.log(day)
+    
     const fetchedData = this.state.fetchedData;
     if (!fetchedData[day.dateString]) {
       fetchedData[day.dateString] = [];        
