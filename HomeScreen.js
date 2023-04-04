@@ -4,7 +4,9 @@ import {Agenda} from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ActionButton from 'react-native-action-button';
 import { SafeAreaProvider } from "react-native-safe-area-context";
-
+import Completed from './body/Completed';
+import NotCompletePassed from './body/NotCompletePassed';
+import NotCompleteFuture from './body/NotCompleteFuture';
 
 export default class HomeScreen extends Component {
 
@@ -14,13 +16,13 @@ export default class HomeScreen extends Component {
     this.state = {
       today:new Date(),
       loading:false,
-      fetchedData:[],
+      items:undefined,
       loadedKeys:[],
     };
   }
+  componentWillReceiveProps(){}
 
   componentDidMount() {
-    //this.clean();
     this.importData();
     this.freeData();
     this.spin();   
@@ -57,11 +59,11 @@ export default class HomeScreen extends Component {
         const parsedJSON = JSON.parse(value);
         var ourDate = this.parseDateIntoStringAndVice(parsedJSON.date);
 
-        if (!this.state.fetchedData[ourDate]) {
-          this.state.fetchedData[ourDate] = [];        
+        if (!this.state.items[ourDate]) {
+          this.state.items[ourDate] = [];        
         } 
 
-        this.state.fetchedData[ourDate].push({
+        this.state.items[ourDate].push({
           start: parsedJSON.start,
           end: parsedJSON.end,
           name: parsedJSON.name,
@@ -72,9 +74,10 @@ export default class HomeScreen extends Component {
           date:parsedJSON.date,
           key:key,
         });
+        this.state.items[ourDate].sort((a, b) => new Date(a.date) - new Date(b.date));
       }
     } catch (error) {
-      // Error retrieving data
+     console.error(error);
     }
   };
 
@@ -131,49 +134,55 @@ export default class HomeScreen extends Component {
   }
 
   freeData = () =>{
-    const fetchedData = this.state.fetchedData;
+    const items = this.state.items || {};
     let today = new Date();
     for(let i=1;i<365;i++){
       today.setDate(today.getDate() + 1);
       let val = this.parseDateIntoStringAndVice(today);
-      if (!fetchedData[val]) {
-        fetchedData[val] = [];        
+      if (!items[val]) {
+        items[val] = [];        
       }
     }
     today = new Date();
     for(let i=1;i<365;i++){
       today.setDate(today.getDate() - 1);
       let val = this.parseDateIntoStringAndVice(today);
-      if (!fetchedData[val]) {
-        fetchedData[val] = [];        
+      if (!items[val]) {
+        items[val] = [];        
       }
     }
-    this.setState({ fetchedData });
+    this.setState({ items });
     this.setState({loading:false});
   }
 
 
   importData = async () => {
     this.setState({loading:true});
+    let items = {};
     try {
       const keys = await AsyncStorage.getAllKeys();
       if (keys.length === 0) {
-        this.setState({ fetchedData:[] });
+        this.setState({ items:undefined });
         return;
       }
       this.setState({loadedKeys:keys});
-      const fetchedData = [];
+      
+
+      let timestamps = [];
   
       for (const key of keys) {
         const value = await AsyncStorage.getItem(key);
         const parsedJSON = JSON.parse(value);
+        let timestamp =  new Date(parsedJSON.date).getTime(); 
         var ourDate = this.parseDateIntoStringAndVice(parsedJSON.date);
 
-        if (!fetchedData[ourDate]) {
-          fetchedData[ourDate] = [];        
+        timestamps.push(timestamp);
+        
+        if (!items[ourDate]) {
+          items[ourDate] = [];        
         } 
 
-        fetchedData[ourDate].push({
+        items[ourDate].push({
           start: parsedJSON.start,
           end: parsedJSON.end,
           name: parsedJSON.name,
@@ -181,10 +190,12 @@ export default class HomeScreen extends Component {
           height:100,
           completed: parsedJSON.completed,
           date:parsedJSON.date,
+          day:parsedJSON.date,
           key:key,
         });
+        items[ourDate].sort((a, b) => new Date(a.date) - new Date(b.date));
       }
-      this.setState({ fetchedData });
+      this.setState({ items});
     } catch (error) {
       console.error(error);
     }
@@ -199,7 +210,7 @@ export default class HomeScreen extends Component {
       <SafeAreaProvider style={{flex:1}}>        
       <Agenda
         //testID={testIDs.agenda.CONTAINER}
-        items={this.state.fetchedData}
+        items={this.state.items}
         loadItemsForMonth={this.loadItemsForMonth}
         selected={this.state.today}
         renderItem={this.renderItem}
@@ -253,6 +264,7 @@ export default class HomeScreen extends Component {
  };
 
   createCompletness = (reservation) =>{
+    console.log(reservation);
     if(!reservation.completed){
       Alert.alert('Is this event completed?', reservation.name, [
         {
@@ -286,9 +298,9 @@ export default class HomeScreen extends Component {
   
   loadItemsForMonth = (day) => {
     
-    const fetchedData = this.state.fetchedData;
-    if (!fetchedData[day.dateString]) {
-      fetchedData[day.dateString] = [];        
+    const items = this.state.items;
+    if (!items[day.dateString]) {
+      items[day.dateString] = [];        
     }
     let buildDate = new Date();
     buildDate.setFullYear(day.year,day.month,day.day);
@@ -296,26 +308,36 @@ export default class HomeScreen extends Component {
     for(let i=1;i<31;i++){
       nextDay.setDate(nextDay.getDate() + 1);
       let val = this.parseDateIntoStringAndVice(nextDay);
-      if (!fetchedData[val]) {
-        fetchedData[val] = [];        
+      if (!items[val]) {
+        items[val] = [];        
       }
     } 
     for(let i=1;i<31;i++){
       nextDay.setDate(nextDay.getDate() -1);
       let val = this.parseDateIntoStringAndVice(nextDay);
-      if (!fetchedData[val]) {
-        fetchedData[val] = [];        
+      if (!items[val]) {
+        items[val] = [];        
       }
     } 
 
       this.setState({
-        fetchedData
+        items
       });
     
     
   }
 
   renderItem = (reservation, isFirst) => {
+
+    var now = new Date();
+    var meetingStart = new Date(reservation.date);
+    var meetingEnd = new Date(reservation.date);
+
+
+    let time = reservation.end.split(":");
+    meetingEnd.setUTCHours(time[0],time[1]);
+
+
 
     let cssTime = styles.time;
     let cssName = styles.name;
@@ -327,9 +349,80 @@ export default class HomeScreen extends Component {
       cssDescription = styles.descriptionCancelled;
     }
 
+    if(reservation.completed){
+      return (
+        <TouchableOpacity
+        onPress={() => this.createCompletness(reservation)} 
+        style={{
+          width: '95%',
+          height: reservation.height,
+          marginBottom:10,
+          marginTop:5,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'white',
+          borderRadius: 20,
+          overflow: 'hidden',
+        }}>
+        <Completed data={reservation}/>
+      </TouchableOpacity>
+  
+      );
+    }
+
+
+    if (now < meetingStart) {
+      
+      return (
+      <TouchableOpacity      
+        onPress={() => this.createCompletness(reservation)} 
+        style={{
+          width: '95%',
+          height: reservation.height,
+          marginBottom:10,
+          marginTop:5,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'white',
+          borderRadius: 20,
+          overflow: 'hidden',
+        }}>
+        <NotCompleteFuture data={reservation}/>
+      </TouchableOpacity>
+    );
+    } else {
+      console.log('either current or past');
+      console.log('now ' + now)
+      console.log('meetingEnd ' + meetingEnd)
+      if(now < meetingEnd){
+        console.log('current')
+       // return;
+      }else{
+      return (
+        <TouchableOpacity
+          onPress={() => this.createCompletness(reservation)} 
+          style={{
+            width: '95%',
+            height: reservation.height,
+            marginBottom:10,
+            marginTop:5,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'white',
+            borderRadius: 20,
+            overflow: 'hidden',
+          }}>
+          <NotCompletePassed data={reservation}/>
+        </TouchableOpacity>
+        );
+      }
+    }
+
+
+
     return (
       <TouchableOpacity
-      onPress={() => this.createCompletness(reservation,isFirst)} 
+      onPress={() => this.createCompletness(reservation)} 
       style={{
         width: '95%',
         height: reservation.height,
@@ -349,6 +442,8 @@ export default class HomeScreen extends Component {
 
     );
   }
+
+
 
   parseBody = (reservation) => {
     if(reservation.completed){
@@ -404,10 +499,10 @@ export default class HomeScreen extends Component {
 
   parseDateIntoStringAndVice = (data) => {
     const date = new Date(data);
-    date.setHours(0);
-    date.setMinutes(0);
-    date.setSeconds(0);
-    date.setMilliseconds(0);
+    //date.setHours(0);
+    //date.setMinutes(0);
+    //date.setSeconds(0);
+    //date.setMilliseconds(0);
     const formattedDate = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
     return formattedDate
   }
