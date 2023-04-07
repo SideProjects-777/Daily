@@ -266,16 +266,21 @@ export default class HomeScreen extends Component {
     return `${item?.reservation?.day}${index}`;
  };
 
- 
- handleCompletness = (reservation) => {
-  reservation.completed = true;
-  
-  this.updateData(reservation.key,reservation);
-  this.importData();
-  console.log(this.state.loading);
-  this.freeData();
-  this.setState({loading:false});
- }
+
+  deleteEvent = (reservation) => {
+      Alert.alert('Do you want to remove the event?', reservation.name, [
+        {
+          text: 'Close',
+          onPress: () => console.log('Cancel Pressed'),
+          style: 'cancel',
+        },
+        {text: 'Remove', onPress: () => {
+          this.deleteFromStorage(reservation.key);
+          this.importData();
+          this.freeData();
+        }},
+      ]);
+}
 
   createCompletness = (reservation) =>{
     if(!reservation.completed){
@@ -293,14 +298,15 @@ export default class HomeScreen extends Component {
         }},
       ]);
     }else{
-      Alert.alert('Do you want to remove the event?', reservation.name, [
+      Alert.alert('Event became valid?', reservation.name, [
         {
           text: 'Close',
           onPress: () => console.log('Cancel Pressed'),
           style: 'cancel',
         },
-        {text: 'Remove', onPress: () => {
-          this.deleteFromStorage(reservation.key);
+        {text: 'Completed', onPress: () => {
+          reservation.completed = false
+          this.updateData(reservation.key,reservation);
           this.importData();
           this.freeData();
         }},
@@ -358,7 +364,8 @@ export default class HomeScreen extends Component {
     if(reservation.completed){
       return (
         <TouchableOpacity
-        onLongPress={() => this.createCompletness(reservation)} 
+        onLongPress={() => this.deleteEvent(reservation)}
+        onPress={() => this.createCompletness(reservation)}
         style={{
           width: '95%',
           height: reservation.height,
@@ -370,7 +377,6 @@ export default class HomeScreen extends Component {
           borderRadius: 20,
           overflow: 'hidden',
         }}>
-        <CheckBox  isChecked={reservation.completed} onClick={() => this.handleCompletness(reservation)}/>
         <Completed data={reservation}/>        
       </TouchableOpacity>
   
@@ -380,7 +386,8 @@ export default class HomeScreen extends Component {
 
       return (
       <TouchableOpacity      
-        onPress={() => this.createCompletness(reservation)} 
+      onLongPress={() => this.deleteEvent(reservation)}
+      onPress={() => this.createCompletness(reservation)}
         style={{
           width: '95%',
           height: reservation.height,
@@ -400,7 +407,8 @@ export default class HomeScreen extends Component {
       if(now < meetingEnd){
         return (
           <TouchableOpacity
-          onPress={() => this.createCompletness(reservation)} 
+          onLongPress={() => this.deleteEvent(reservation)}
+          onPress={() => this.createCompletness(reservation)}
             style={{
               width: '95%',
               height: reservation.height,
@@ -419,7 +427,8 @@ export default class HomeScreen extends Component {
       }else{
       return (
         <TouchableOpacity
-          onLongPress={() => this.createCompletness(reservation)} 
+        onLongPress={() => this.deleteEvent(reservation)}
+        onPress={() => this.createCompletness(reservation)}
           style={{
             width: '95%',
             height: reservation.height,
@@ -431,7 +440,6 @@ export default class HomeScreen extends Component {
             borderRadius: 20,
             overflow: 'hidden',
           }}>
-          <CheckBox  isChecked={reservation.completed} onClick={() => this.handleCompletness(reservation)}/>
           <NotCompletePassed data={reservation}/>
         </TouchableOpacity>
         );
