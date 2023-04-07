@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
-import {Alert, Modal,StyleSheet, Text,  Animated, Easing, View, TouchableOpacity, ScrollView} from 'react-native';
+import {Alert, Modal,StyleSheet, Text,  Animated, Easing, View, TouchableOpacity } from 'react-native';
+import CheckBox from 'react-native-checkbox-component';
 import {Agenda} from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ActionButton from 'react-native-action-button';
@@ -7,6 +8,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import Completed from './body/Completed';
 import NotCompletePassed from './body/NotCompletePassed';
 import NotCompleteFuture from './body/NotCompleteFuture';
+import NotCompleteCurrent from './body/NotCompleteCurrent';
 
 export default class HomeScreen extends Component {
 
@@ -23,6 +25,7 @@ export default class HomeScreen extends Component {
   componentWillReceiveProps(){}
 
   componentDidMount() {
+    //this.clean();
     this.importData();
     this.freeData();
     this.spin();   
@@ -263,8 +266,18 @@ export default class HomeScreen extends Component {
     return `${item?.reservation?.day}${index}`;
  };
 
+ 
+ handleCompletness = (reservation) => {
+  reservation.completed = true;
+  
+  this.updateData(reservation.key,reservation);
+  this.importData();
+  console.log(this.state.loading);
+  this.freeData();
+  this.setState({loading:false});
+ }
+
   createCompletness = (reservation) =>{
-    console.log(reservation);
     if(!reservation.completed){
       Alert.alert('Is this event completed?', reservation.name, [
         {
@@ -298,7 +311,10 @@ export default class HomeScreen extends Component {
   
   loadItemsForMonth = (day) => {
     
-    const items = this.state.items;
+    let items = this.state.items;
+    if(items==undefined){
+      items = {};
+    }
     if (!items[day.dateString]) {
       items[day.dateString] = [];        
     }
@@ -330,29 +346,19 @@ export default class HomeScreen extends Component {
   renderItem = (reservation, isFirst) => {
 
     var now = new Date();
-    var meetingStart = new Date(reservation.date);
-    var meetingEnd = new Date(reservation.date);
+    var meetingStart = new Date(Date.parse(reservation.date));
+    meetingStart.setHours(meetingStart.getHours()-2);
+    var meetingEnd = new Date(Date.parse(reservation.date));
+    meetingEnd.setHours(meetingEnd.getHours()-2);
 
 
     let time = reservation.end.split(":");
-    meetingEnd.setUTCHours(time[0],time[1]);
-
-
-
-    let cssTime = styles.time;
-    let cssName = styles.name;
-    let cssDescription = styles.description;
-
-    if (!isFirst) {
-      cssTime = styles.timeCancelled;
-      cssName = styles.nameCancelled;
-      cssDescription = styles.descriptionCancelled;
-    }
+    meetingEnd.setHours(time[0],time[1]);
 
     if(reservation.completed){
       return (
         <TouchableOpacity
-        onPress={() => this.createCompletness(reservation)} 
+        onLongPress={() => this.createCompletness(reservation)} 
         style={{
           width: '95%',
           height: reservation.height,
@@ -364,15 +370,14 @@ export default class HomeScreen extends Component {
           borderRadius: 20,
           overflow: 'hidden',
         }}>
-        <Completed data={reservation}/>
+        <CheckBox  isChecked={reservation.completed} onClick={() => this.handleCompletness(reservation)}/>
+        <Completed data={reservation}/>        
       </TouchableOpacity>
   
       );
     }
-
-
     if (now < meetingStart) {
-      
+
       return (
       <TouchableOpacity      
         onPress={() => this.createCompletness(reservation)} 
@@ -387,20 +392,34 @@ export default class HomeScreen extends Component {
           borderRadius: 20,
           overflow: 'hidden',
         }}>
+        
         <NotCompleteFuture data={reservation}/>
       </TouchableOpacity>
     );
     } else {
-      console.log('either current or past');
-      console.log('now ' + now)
-      console.log('meetingEnd ' + meetingEnd)
       if(now < meetingEnd){
-        console.log('current')
-       // return;
+        return (
+          <TouchableOpacity
+          onPress={() => this.createCompletness(reservation)} 
+            style={{
+              width: '95%',
+              height: reservation.height,
+              marginBottom:10,
+              marginTop:5,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'white',
+              borderRadius: 20,
+              overflow: 'hidden',
+            }}>
+            
+            <NotCompleteCurrent data={reservation}/>
+          </TouchableOpacity>
+          );
       }else{
       return (
         <TouchableOpacity
-          onPress={() => this.createCompletness(reservation)} 
+          onLongPress={() => this.createCompletness(reservation)} 
           style={{
             width: '95%',
             height: reservation.height,
@@ -412,35 +431,12 @@ export default class HomeScreen extends Component {
             borderRadius: 20,
             overflow: 'hidden',
           }}>
+          <CheckBox  isChecked={reservation.completed} onClick={() => this.handleCompletness(reservation)}/>
           <NotCompletePassed data={reservation}/>
         </TouchableOpacity>
         );
       }
     }
-
-
-
-    return (
-      <TouchableOpacity
-      onPress={() => this.createCompletness(reservation)} 
-      style={{
-        width: '95%',
-        height: reservation.height,
-        marginBottom:10,
-        marginTop:5,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'white',
-        borderRadius: 20,
-        overflow: 'hidden',
-      }}>
-        {this.parseBody(reservation)}
-        <Text style={cssTime}>{reservation.start} - {reservation.end}</Text>
-        <Text style={cssName}>{reservation.name}</Text>
-        <Text style={cssDescription}>{reservation.description}</Text>  
-    </TouchableOpacity>
-
-    );
   }
 
 
