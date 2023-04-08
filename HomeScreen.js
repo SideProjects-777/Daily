@@ -26,33 +26,24 @@ export default class HomeScreen extends Component {
 
   componentDidMount() {
     //this.clean();
-    this.importData();
-    this.freeData();
+    this.loadDataSet();
     this.spin();   
   }
 
-  componentDidUpdate(){
-    if(this.props.route!==undefined){
-      const {route} = this.props;
-      if(route.params!==undefined){
-        const { key } = route.params;
-        if(key!==undefined){
-          const {loadedKeys} = this.state;
-          for(kk of loadedKeys){
-            if(kk==key){
-              return;
-            }
-          }
-          this.setState({loading:true});
-          this.retrieveData(key);          
-          loadedKeys.push(key);
-          this.setState({loadedKeys});
-          this.setState({loading:false});
-
-
-        }
-      }
-    }    
+  componentDidUpdate(prevProps) {
+    const { route } = this.props;
+    const { key } = route?.params ?? {};
+    const { loadedKeys } = this.state;
+    
+    if (key && key !== prevProps.route?.params?.key && !loadedKeys.includes(key)) {
+      this.setState({ loading: true });
+      this.retrieveData(key).then(() => {
+        this.setState({ loadedKeys: [...loadedKeys, key], loading: false });
+      }).catch((error) => {
+        console.error(error);
+        this.setState({ loading: false });
+      });
+    } 
   }
 
   retrieveData = async (key) => {
@@ -104,7 +95,7 @@ export default class HomeScreen extends Component {
         this.setState({ storedValue: value });
       }
     } catch (e) {
-      console.log('Error reading value from AsyncStorage');
+      console.error('Error reading value from AsyncStorage');
     }
   };
 
@@ -136,74 +127,73 @@ export default class HomeScreen extends Component {
     }
   }
 
-  freeData = () =>{
-    const items = this.state.items || {};
-    let today = new Date();
-    for(let i=1;i<365;i++){
-      today.setDate(today.getDate() + 1);
-      let val = this.parseDateIntoStringAndVice(today);
-      if (!items[val]) {
-        items[val] = [];        
+  loadDataSet = async () =>{
+      this.setState({ loading: true });
+      let items = {};
+    
+      // Initialize items object
+      let today = new Date();
+      for (let i = 1; i < 365; i++) {
+        today.setDate(today.getDate() + 1);
+        let val = this.parseDateIntoStringAndVice(today);
+        if (!items[val]) {
+          items[val] = [];
+        }
       }
-    }
-    today = new Date();
-    for(let i=1;i<365;i++){
-      today.setDate(today.getDate() - 1);
-      let val = this.parseDateIntoStringAndVice(today);
-      if (!items[val]) {
-        items[val] = [];        
+      today = new Date();
+      for (let i = 1; i < 365; i++) {
+        today.setDate(today.getDate() - 1);
+        let val = this.parseDateIntoStringAndVice(today);
+        if (!items[val]) {
+          items[val] = [];
+        }
       }
-    }
-    this.setState({ items });
-    this.setState({loading:false});
+    
+      // Import data from AsyncStorage
+      try {
+        const keys = await AsyncStorage.getAllKeys();
+        if (keys.length === 0) {
+          this.setState({ items: undefined });
+          this.setState({ loading: false });
+          return;
+        }
+        this.setState({ loadedKeys: keys });
+    
+        let timestamps = [];
+    
+        for (const key of keys) {
+          const value = await AsyncStorage.getItem(key);
+          const parsedJSON = JSON.parse(value);
+          let timestamp = new Date(parsedJSON.date).getTime();
+          var ourDate = this.parseDateIntoStringAndVice(parsedJSON.date);
+    
+          timestamps.push(timestamp);
+    
+          if (!items[ourDate]) {
+            items[ourDate] = [];
+          }
+    
+          items[ourDate].push({
+            start: parsedJSON.start,
+            end: parsedJSON.end,
+            name: parsedJSON.name,
+            description: parsedJSON.description,
+            height: 100,
+            completed: parsedJSON.completed,
+            date: parsedJSON.date,
+            day: parsedJSON.date,
+            key: key,
+          });
+          items[ourDate].sort((a, b) => new Date(a.date) - new Date(b.date));
+        }
+        this.setState({ items });
+      } catch (error) {
+        console.error(error);
+      }
+      this.setState({ loading: false });
+
+    
   }
-
-
-  importData = async () => {
-    this.setState({loading:true});
-    let items = {};
-    try {
-      const keys = await AsyncStorage.getAllKeys();
-      if (keys.length === 0) {
-        this.setState({ items:undefined });
-        return;
-      }
-      this.setState({loadedKeys:keys});
-      
-
-      let timestamps = [];
-  
-      for (const key of keys) {
-        const value = await AsyncStorage.getItem(key);
-        const parsedJSON = JSON.parse(value);
-        let timestamp =  new Date(parsedJSON.date).getTime(); 
-        var ourDate = this.parseDateIntoStringAndVice(parsedJSON.date);
-
-        timestamps.push(timestamp);
-        
-        if (!items[ourDate]) {
-          items[ourDate] = [];        
-        } 
-
-        items[ourDate].push({
-          start: parsedJSON.start,
-          end: parsedJSON.end,
-          name: parsedJSON.name,
-          description: parsedJSON.description,
-          height:100,
-          completed: parsedJSON.completed,
-          date:parsedJSON.date,
-          day:parsedJSON.date,
-          key:key,
-        });
-        items[ourDate].sort((a, b) => new Date(a.date) - new Date(b.date));
-      }
-      this.setState({ items});
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
 
   
   render() {
@@ -276,8 +266,7 @@ export default class HomeScreen extends Component {
         },
         {text: 'Remove', onPress: () => {
           this.deleteFromStorage(reservation.key);
-          this.importData();
-          this.freeData();
+          this.loadDataSet();
         }},
       ]);
 }
@@ -293,8 +282,7 @@ export default class HomeScreen extends Component {
         {text: 'Completed', onPress: () => {
           reservation.completed = true
           this.updateData(reservation.key,reservation);
-          this.importData();
-          this.freeData();
+          this.loadDataSet();
         }},
       ]);
     }else{
@@ -307,8 +295,7 @@ export default class HomeScreen extends Component {
         {text: 'Completed', onPress: () => {
           reservation.completed = false
           this.updateData(reservation.key,reservation);
-          this.importData();
-          this.freeData();
+          this.loadDataSet();
         }},
       ]);
     }
