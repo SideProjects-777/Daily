@@ -22,7 +22,6 @@ export default class HomeScreen extends Component {
       loadedKeys:[],
     };
   }
-  componentWillReceiveProps(){}
 
   componentDidMount() {
     //this.clean();
