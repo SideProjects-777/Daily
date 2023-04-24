@@ -3,8 +3,12 @@
     "name": "Daily",
     "slug": "Daily",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/myIcon.png",
+    "platforms": [
+      "android",
+      "ios"
+    ],
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/myIcon.png",
@@ -22,7 +26,8 @@
         "foregroundImage": "./assets/myIcon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.device999.Daily"
+      "package": "com.device999.Daily",
+      "versionCode":1
     },
     "web": {
       "favicon": "./assets/myIcon.png"
