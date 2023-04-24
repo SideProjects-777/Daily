@@ -3,15 +3,11 @@
     "name": "Daily",
     "slug": "Daily",
     "version": "1.0.0",
-    "orientation": "default",
-    "icon": "./assets/myIcon.png",
-    "platforms": [
-      "android",
-      "ios"
-    ],
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/myIcon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -23,19 +19,12 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/myIcon.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "package": "com.device999.Daily",
-      "versionCode":1
+      }
     },
     "web": {
-      "favicon": "./assets/myIcon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "c03c8943-12f0-4cae-b87f-3efab9d55a98"
-      }
+      "favicon": "./assets/favicon.png"
     }
   }
 }
