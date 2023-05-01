@@ -7,14 +7,14 @@ import NewEvent from './NewEvent';
 const Stack = createStackNavigator();
 
 export default class App extends Component {
-render() {
-return (
-<NavigationContainer>
-<Stack.Navigator>
-<Stack.Screen name="Home" component={HomeScreen} />
-<Stack.Screen name="Add" component={NewEvent} options={{headerShown: false}}/>
-</Stack.Navigator>
-</NavigationContainer>
-);
-}
+    render() {
+    return (
+    <NavigationContainer>
+        <Stack.Navigator>
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Add" component={NewEvent} options={{headerShown: false}}/>
+        </Stack.Navigator>
+    </NavigationContainer>
+    );
+    }
 }
