@@ -39,8 +39,7 @@ interface State {
     loadedKeys : string[];
 }
 
-export default class HomeScreen extends Component < any,
-State > {
+export default class HomeScreen extends Component < any, State > {
     private spinValue = new Animated.Value(0);
 
     constructor(props : {}) {
@@ -327,7 +326,7 @@ State > {
               onPress: () => console.log('Cancel Pressed'),
               style: 'cancel',
             },
-            {text: 'Completed', onPress: () => {
+            {text: 'Activate', onPress: () => {
               reservation.completed = false
               this.updateData(reservation.key,reservation);
               this.loadDataSet();
