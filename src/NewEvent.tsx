@@ -3,6 +3,7 @@ import { View, Text, Button, StyleSheet, TextInput, ScrollView } from 'react-nat
 import { TimePickerModal, DatePickerModal } from 'react-native-paper-dates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CalendarDate, SingleChange } from 'react-native-paper-dates/lib/typescript/Date/Calendar';
+import StorageService from './service/StorageService';
 
 type Props = {
   navigation: any;
@@ -98,8 +99,7 @@ export default class NewEvent extends Component<Props, State> {
         completed: false,
       };
       const jsonString = JSON.stringify(body);
-      await AsyncStorage.setItem(key, jsonString);
-      //this.setState({ storedValue: this.state.inputValue });
+      StorageService.post(key,jsonString);
     } catch (e) {
       console.error(e);
       console.log('Error storing value in AsyncStorage');

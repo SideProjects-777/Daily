@@ -1,6 +1,8 @@
 import React, {FC} from 'react';
-import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
+import {View, Text, TouchableOpacity, Alert } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import StorageService from '../service/StorageService';
+
 
 interface Props {
     data : {
@@ -8,10 +10,29 @@ interface Props {
         end: string;
         name: string;
         description: string;
+        key:string;
     }
 }
 
-const Completed : React.FC < Props > = (props) => {
+const Completed : React.FC < Props > = ({ data }) => {
+
+    const deleteEvent = async () => {
+        Alert.alert('Do you want to remove the event?', data.name, [
+          {
+            text: 'Close',
+            onPress: () => console.log('Cancel Pressed'),
+            style: 'cancel',
+          },
+          {
+            text: 'Remove',
+            onPress: () => {
+              StorageService.delete(data.key);
+            },
+          },
+        ]);
+    };
+
+
     return ( 
     <> 
         <View
@@ -39,9 +60,9 @@ const Completed : React.FC < Props > = (props) => {
                 <MaterialCommunityIcons name="check-outline" color="white" size={15}/>
             </Text>
         </View> 
-        <Text style = {{ fontSize: 18, color: 'grey' }} > {props.data.start} - {props.data.end} </Text>
-        <Text style={{ fontSize: 16, color: 'grey' }}>{props.data.name}</Text > 
-        <Text style={{ fontSize: 14, color: 'grey'}}>{props.data.description}</Text>
+        <Text style = {{ fontSize: 18, color: 'grey' }} > {data.start} - {data.end} </Text>
+        <Text style={{ fontSize: 16, color: 'grey' }}>{data.name}</Text > 
+        <Text style={{ fontSize: 14, color: 'grey'}}>{data.description}</Text>
     </>
     );
 }

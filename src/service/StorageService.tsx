@@ -26,7 +26,7 @@ class StorageService {
 
     static async post(key:string, value:string) {
       try {
-        await AsyncStorage.setItem(key, JSON.stringify(value));
+        await AsyncStorage.setItem(key, value);
         return true;
       } catch (error) {
         console.error(error);

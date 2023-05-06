@@ -135,7 +135,9 @@ export default class HomeScreen extends Component < any, State > {
         try {
             const keys = await AsyncStorage.getAllKeys();
             if (keys.length === 0) {
-                this.setState({items: undefined});
+                var today = this.parseDateIntoStringAndVice(new Date());
+                items[today] = [];
+                this.setState({items: items});
                 this.setState({loading: false});
                 return;
             }
@@ -193,6 +195,7 @@ export default class HomeScreen extends Component < any, State > {
                 rowHasChanged={this.rowHasChanged}
                 showClosingKnob={true}
                 monthFormat={'MMMM' + ' - ' + 'yyyy'}
+                renderEmptyDate={this.renderEmptyDate}
                 reservationsKeyExtractor={this.reservationsKeyExtractor}
               />
               <ActionButton
@@ -215,6 +218,17 @@ export default class HomeScreen extends Component < any, State > {
       }
 
 
+    renderEmptyDate = ({date}:any) => {
+        return (
+          <View style={{
+            height: 15,
+            flex: 1,
+            paddingTop: 50
+          }}>
+            <Text>Nothing planned</Text>
+          </View>
+        );
+    }
     reservationsKeyExtractor = (item: DayAgenda, index: number) => {
         return `${item?.reservation?.day}${index}`;
     };
@@ -233,8 +247,6 @@ export default class HomeScreen extends Component < any, State > {
               let updKey = this.parseDateIntoStringAndVice(reservation.date);
               items[updKey] = undefined;
               this.setState({items:items});
-              //console.log(reservation.date);
-              //this.loadDataSet();
             }},
           ]);
     }
@@ -370,10 +382,6 @@ export default class HomeScreen extends Component < any, State > {
       
       parseDateIntoStringAndVice = (data: Date) => {
         const date = new Date(data);
-        //date.setHours(0);
-        //date.setMinutes(0);
-        //date.setSeconds(0);
-        //date.setMilliseconds(0);
         const formattedDate = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
         return formattedDate
       }
