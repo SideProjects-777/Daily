@@ -1,14 +1,5 @@
 import React, {Component, ReactNode} from 'react';
-import {
-    Alert,
-    Modal,
-    StyleSheet,
-    Text,
-    Animated,
-    Easing,
-    View,
-    TouchableOpacity
-} from 'react-native';
+import { Alert, StyleSheet, Text, Animated, Easing, View, TouchableOpacity} from 'react-native';
 import {Agenda} from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ActionButton from 'react-native-action-button';
@@ -90,7 +81,7 @@ export default class HomeScreen extends Component < any, State > {
             const value = await AsyncStorage.getItem(key);
             if (value !== null) {
                 const parsedJSON : Item = JSON.parse(value);
-                const ourDate = this.parseDateIntoStringAndVice(parsedJSON.date);
+                const ourDate = this.parseDateIntoStringAndVice(new Date(parsedJSON.date));
 
                 if (!this.state.items[ourDate]) {
                     this.state.items[ourDate] = [];
