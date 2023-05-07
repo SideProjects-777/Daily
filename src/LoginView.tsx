@@ -27,6 +27,10 @@ class LoginView extends Component < {},State > {
         // Perform login logic here
     };
 
+    handleProceed = () => {
+        this.props.navigation.navigate('Home');
+    };
+
     render() {
         const {email, password} = this.state;
         return (
@@ -52,7 +56,7 @@ class LoginView extends Component < {},State > {
                     <TouchableOpacity style={styles.button} onPress={this.handleLoginPress}>
                         <Text style={styles.buttonText}>Connect</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.button} onPress={this.handleLoginPress}>
+                    <TouchableOpacity style={styles.button} onPress={this.handleProceed}>
                         <Text style={styles.buttonText}>Local</Text>
                     </TouchableOpacity>
                     </View>

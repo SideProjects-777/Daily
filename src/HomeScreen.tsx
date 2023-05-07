@@ -209,9 +209,9 @@ export default class HomeScreen extends Component < any, State > {
                   <Animated.Text
                     style={[styles.logo, { transform: [{ rotate: spin }] }]}
                   >
-                    Daily App
+                    Loading...
                   </Animated.Text>
-                  <Text style={styles.text}>Loading...</Text>
+                  <Text style={styles.text}></Text>
                 </View>
               );
         }
