@@ -34,6 +34,7 @@ export default class NewEvent extends Component<Props, State> {
     key: '',
   };
 
+
   handleSave = () => {
     const key = Math.random().toString(36).substring(2, 14);
     this.setState({ key });
@@ -121,6 +122,7 @@ export default class NewEvent extends Component<Props, State> {
     let parsedMinutes  = `${minutes < 10 ? '0'+minutes : minutes}`;
     let finalAnswer = hours+':'+parsedMinutes
     this.setState({ showFromTimePicker: false, start:finalAnswer });
+    //this.validate();
   };
 
   onDismissTo = () => {
@@ -131,11 +133,14 @@ export default class NewEvent extends Component<Props, State> {
     let parsedMinutes  = `${minutes < 10 ? '0'+minutes : minutes}`;
     let finalAnswer = hours+':'+parsedMinutes
     this.setState({ showToTimePicker: false, end:finalAnswer});
+    //this.validate();
   };
 
   onDismissDate = () => {
     this.setState({ showDatePicker: false });
   };
+
+
 
   onConfirmDate: SingleChange = ({ date }: { date: CalendarDate }) => {
     this.setState({ showDatePicker: false, date });
