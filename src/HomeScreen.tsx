@@ -244,8 +244,10 @@ export default class HomeScreen extends Component < any, State > {
             {text: 'Remove', onPress: () => {
               StorageService.delete(reservation.key);
               let {items} = this.state;
+
               let updKey = this.parseDateIntoStringAndVice(reservation.date);
-              items[updKey] = undefined;
+              const isToday = new Date(updKey).toDateString() === new Date().toDateString();
+              items[updKey] = isToday ? [] : undefined;
               this.setState({items:items});
             }},
           ]);

@@ -46,32 +46,7 @@ export default class NewEvent extends Component<Props, State> {
   };
 
 
-  restoreState = () => {}
-
-
-  handleSave = () => {
-    const key = Math.random().toString(36).substring(2, 14);
-    this.setState({ key });
-    if(!this.validate()){
-      console.log("failed");
-      //this.storeData(key.toString());
-
-      this.setState({
-        name: '',
-        description: '',
-        start: '',
-        end: '',
-        date: new Date(),
-        showFromTimePicker: false,
-        showToTimePicker: false,
-        showDatePicker: false,
-        key: '',
-      });
-      //this.props.navigation.navigate('Home', { key });
-    }    
-  };
-
-  handleCancel = () => {
+  restoreState = () => {
     this.setState({
       name: '',
       description: '',
@@ -81,7 +56,32 @@ export default class NewEvent extends Component<Props, State> {
       showFromTimePicker: false,
       showToTimePicker: false,
       showDatePicker: false,
+      key: '',
+      validation:{
+        from: new Date(),
+        to: new Date(),
+      },
+      error:false,
     });
+  }
+
+
+  handleSave = () => {
+    const key = Math.random().toString(36).substring(2, 14);
+    this.setState({ key });
+    if(!this.validate()){
+      this.storeData(key.toString());
+      this.restoreState();
+
+      this.props.navigation.navigate('Home', { key });
+    }else{
+      this.setState({error:true})
+    }
+    
+  };
+
+  handleCancel = () => {
+    this.restoreState();
     this.props.navigation.navigate('Home');
   };
 
@@ -131,6 +131,15 @@ export default class NewEvent extends Component<Props, State> {
     let date = this.state.date;
     let start = this.state.start;
     let end = this.state.end;
+
+    if(!start && !end){ 
+      //console.log("Both not provided")
+      return false;
+    }
+    else if(!start || !end){
+      //Another issue
+      return true;
+    }
     const dayDate = new Date(date);
     const startTime = new Date(`${dayDate.toISOString().substr(0, 10)}T${start}:00`);
     const endTime = new Date(`${dayDate.toISOString().substr(0, 10)}T${end}:00`);
@@ -138,7 +147,6 @@ export default class NewEvent extends Component<Props, State> {
     if (startTime.getTime() < endTime.getTime()) {
       return false;
     } else {
-      this.setState({error:true})
       return true;
     }
   }
@@ -156,8 +164,6 @@ export default class NewEvent extends Component<Props, State> {
   onDismissDate = () => {
     this.setState({ showDatePicker: false });
   };
-
-
 
   onConfirmDate: SingleChange = ({ date }: { date: CalendarDate }) => {
     this.setState({ showDatePicker: false, date });
