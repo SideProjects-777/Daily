@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {View, Text, TextInput, TouchableOpacity} from 'react-native';
+import {View, Text, TextInput, TouchableOpacity, StyleSheet, Image} from 'react-native';
 
 interface State {
     email : string;
@@ -30,9 +30,13 @@ class LoginView extends Component < {},State > {
     render() {
         const {email, password} = this.state;
         return (
-            <View style={{styles.container}}>
+            <View style={styles.container}>
+                <Image
+                    source={require('../assets/background.jpg')}
+                    style={styles.background}
+                />
                 <View style={styles.card}>
-                    <Text style={styles.title}>Login</Text>
+                    <Text style={styles.title}>Gmail</Text>
                     <TextInput
                         style={styles.input}
                         placeholder="Email"
@@ -44,25 +48,36 @@ class LoginView extends Component < {},State > {
                         value={password}
                         onChangeText={this.handlePasswordChange}
                         secureTextEntry/>
+                    <View style={styles.buttonContainer}>
                     <TouchableOpacity style={styles.button} onPress={this.handleLoginPress}>
-                        <Text style={styles.buttonText}>Log In</Text>
+                        <Text style={styles.buttonText}>Connect</Text>
                     </TouchableOpacity>
+                    <TouchableOpacity style={styles.button} onPress={this.handleLoginPress}>
+                        <Text style={styles.buttonText}>Local</Text>
+                    </TouchableOpacity>
+                    </View>
                 </View>
             </View>
         );
     }
 }
 
-const styles = {
+const styles =  StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
         alignItems: 'center',
         justifyContent: 'center'
     },
+    background: {
+        width: '100%',
+        height: '100%',
+        position: 'absolute',
+    },
     card: {
         alignItems: 'center',
-        backgroundColor: '#eee',
+        backgroundColor: '#e5effb',
+        //opacity:0.1,
         borderRadius: 10,
         padding: 20,
         width: '80%'
@@ -70,7 +85,7 @@ const styles = {
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginBottom: 20
+        marginBottom: 20,
     },
     input: {
         borderBottomColor: '#999',
@@ -79,17 +94,22 @@ const styles = {
         padding: 10,
         width: '90%'
     },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%'
+    },
     button: {
         backgroundColor: '#0066cc',
         borderRadius: 5,
         padding: 10,
-        width: '90%'
+        width: '40%'
     },
     buttonText: {
         color: '#fff',
         fontSize: 16,
         textAlign: 'center'
     }
-};
+});
 
 export default LoginView;
