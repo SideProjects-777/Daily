@@ -4,7 +4,8 @@ import { TimePickerModal, DatePickerModal } from 'react-native-paper-dates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CalendarDate, SingleChange } from 'react-native-paper-dates/lib/typescript/Date/Calendar';
 import StorageService from './service/StorageService';
-
+import { en, registerTranslation} from 'react-native-paper-dates'
+registerTranslation('en', en)
 type Props = {
   navigation: any;
 };
@@ -269,7 +270,7 @@ export default class NewEvent extends Component<Props, State> {
                     placeholder="Event Day"
                   />
                     <DatePickerModal
-                      locale="en"
+                      locale={'en'}
                       mode="single"
                       visible={showDatePicker}
                       onDismiss={this.onDismissDate}
