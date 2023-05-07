@@ -19,9 +19,15 @@ type State = {
   showToTimePicker: boolean;
   showDatePicker: boolean;
   key: string;
+  validation:{
+    from: Date,
+    to: Date,    
+  };
+  error:boolean;
 };
 
 export default class NewEvent extends Component<Props, State> {
+
   state: State = {
     name: '',
     description: '',
@@ -32,26 +38,37 @@ export default class NewEvent extends Component<Props, State> {
     showToTimePicker: false,
     showDatePicker: false,
     key: '',
+    validation:{
+      from: new Date(),
+      to: new Date(),
+    },
+    error:false,
   };
+
+
+  restoreState = () => {}
 
 
   handleSave = () => {
     const key = Math.random().toString(36).substring(2, 14);
     this.setState({ key });
-    this.storeData(key.toString());
+    if(!this.validate()){
+      console.log("failed");
+      //this.storeData(key.toString());
 
-    this.setState({
-      name: '',
-      description: '',
-      start: '',
-      end: '',
-      date: new Date(),
-      showFromTimePicker: false,
-      showToTimePicker: false,
-      showDatePicker: false,
-      key: '',
-    });
-    this.props.navigation.navigate('Home', { key });
+      this.setState({
+        name: '',
+        description: '',
+        start: '',
+        end: '',
+        date: new Date(),
+        showFromTimePicker: false,
+        showToTimePicker: false,
+        showDatePicker: false,
+        key: '',
+      });
+      //this.props.navigation.navigate('Home', { key });
+    }    
   };
 
   handleCancel = () => {
@@ -68,13 +85,7 @@ export default class NewEvent extends Component<Props, State> {
     this.props.navigation.navigate('Home');
   };
 
-  generateHeight = (start: string, end: string): number => {
-    let startArr = start.split(':');
-    let endArr = end.split(':');
-    const startTime = parseInt('' + startArr[0] + '' + startArr[1]);
-    const endTime = parseInt('' + endArr[0] + '' + endArr[1]);
-    return endTime - startTime;
-  };
+
 
   parseDateLatest = (date: CalendarDate): CalendarDate => {
     let { start } = this.state;
@@ -89,14 +100,12 @@ export default class NewEvent extends Component<Props, State> {
 
   storeData = async (key: string) => {
     try {
-      const height = this.generateHeight(this.state.start, this.state.end);
       const body = {
         name: this.state.name,
         description: this.state.description,
         start: this.state.start,
         end: this.state.end,
         date: this.parseDateLatest(this.state.date),
-        height: height,
         completed: false,
       };
       const jsonString = JSON.stringify(body);
@@ -107,12 +116,6 @@ export default class NewEvent extends Component<Props, State> {
     }
   };
 
-  generateMilliSeconds() {
-    const min = 100; // Minimum value of the integer
-    const max = 999; // Maximum value of the integer
-    const randomInt = Math.floor(Math.random() * (max - min + 1) + min);
-    return randomInt;
-  }
 
   onDismissFrom = () => {
     this.setState({ showFromTimePicker: false });
@@ -122,8 +125,23 @@ export default class NewEvent extends Component<Props, State> {
     let parsedMinutes  = `${minutes < 10 ? '0'+minutes : minutes}`;
     let finalAnswer = hours+':'+parsedMinutes
     this.setState({ showFromTimePicker: false, start:finalAnswer });
-    //this.validate();
   };
+
+  validate = () =>{
+    let date = this.state.date;
+    let start = this.state.start;
+    let end = this.state.end;
+    const dayDate = new Date(date);
+    const startTime = new Date(`${dayDate.toISOString().substr(0, 10)}T${start}:00`);
+    const endTime = new Date(`${dayDate.toISOString().substr(0, 10)}T${end}:00`);
+    
+    if (startTime.getTime() < endTime.getTime()) {
+      return false;
+    } else {
+      this.setState({error:true})
+      return true;
+    }
+  }
 
   onDismissTo = () => {
     this.setState({ showToTimePicker: false });
@@ -133,7 +151,6 @@ export default class NewEvent extends Component<Props, State> {
     let parsedMinutes  = `${minutes < 10 ? '0'+minutes : minutes}`;
     let finalAnswer = hours+':'+parsedMinutes
     this.setState({ showToTimePicker: false, end:finalAnswer});
-    //this.validate();
   };
 
   onDismissDate = () => {
@@ -166,6 +183,8 @@ export default class NewEvent extends Component<Props, State> {
           date,
           showFromTimePicker,
           showToTimePicker,
+          validation,
+          error,
           showDatePicker } = this.state;
     
         return (
@@ -195,11 +214,20 @@ export default class NewEvent extends Component<Props, State> {
                     value={start.toString()}
                     editable={false}
                     placeholder="Duration From"
-                  />
+                  />                  
+                {error ? (
+                    <Text style={{color:"red"}}>*Time invalid, select correct from</Text>
+                  ) : (
+                   <></>
+                  )}
                   <TimePickerModal
                     visible={showFromTimePicker}
                     onDismiss={this.onDismissFrom}
                     onConfirm={this.onConfirmFrom}
+                    hours={validation.from?.getHours()}
+                    minutes={validation.from?.getMinutes()}
+                    label={"From"}
+                    animationType='fade'
                   />
                   <View style={{width:'100%', height:1, marginTop:15}}></View>
                 <Button onPress={() => this.setState({ showToTimePicker: true })}  title='Pick to'/>
@@ -210,10 +238,20 @@ export default class NewEvent extends Component<Props, State> {
                     editable={false}
                     placeholder="Duration To"
                   />
+                  {error ? (
+                    <Text style={{color:"red"}}>*Time invalid, select correct to</Text>
+                  ) : (
+                   <></>
+                  )}
+                  
                   <TimePickerModal
                       visible={showToTimePicker}
                       onDismiss={this.onDismissTo}
                       onConfirm={this.onConfirmTo}
+                      hours={(validation.to?.getHours())+1}
+                      minutes={validation.to?.getMinutes()}
+                      label={"To"}
+                      animationType='fade'
                   />
                 <View style={{width:'100%', height:1, marginTop:15}}></View>
                 <Button onPress={() => this.setState({showDatePicker:true})} title='Pick single date' />
@@ -298,7 +336,7 @@ const styles = StyleSheet.create({
     },
   
     inputBig: {
-      minHeight:'20%',
+      minHeight:'15%',
       width:'90%',
       borderColor: '#ccc',
       borderWidth: 1,
