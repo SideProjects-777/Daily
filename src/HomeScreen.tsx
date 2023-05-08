@@ -53,6 +53,7 @@ export default class HomeScreen extends Component < any, State > {
         const {key} = route
             ?.params ?? {};
         const {loadedKeys} = this.state;
+        console.log(key)
 
         if (key && key !== prevProps.route
             ?.params
@@ -149,7 +150,6 @@ export default class HomeScreen extends Component < any, State > {
                 const value = await AsyncStorage.getItem(key);
                 const parsedJSON = JSON.parse(value !);
                 let timestamp = new Date(parsedJSON.date).getTime();
-                console.log(parsedJSON.date);
                 var ourDate = this.parseDateIntoStringAndVice(parsedJSON.date);
 
                 timestamps.push(timestamp);
@@ -257,7 +257,12 @@ export default class HomeScreen extends Component < any, State > {
         if(!reservation.completed){
           Alert.alert('Is this event completed?', reservation.name, [
             {
-              text: 'Close',
+              text: 'Edit',
+              onPress: () => this.props.navigation.navigate('Add', {reservation}),
+              style: 'cancel',
+            },
+            {
+              text: 'Cancel',
               onPress: () => console.log('Cancel Pressed'),
               style: 'cancel',
             },
@@ -269,6 +274,11 @@ export default class HomeScreen extends Component < any, State > {
           ]);
         }else{
           Alert.alert('Event became valid?', reservation.name, [
+            {
+              text: 'Edit',
+              onPress: () => this.props.navigation.navigate('Add', {reservation}),
+              style: 'cancel',
+            },
             {
               text: 'Close',
               onPress: () => console.log('Cancel Pressed'),
