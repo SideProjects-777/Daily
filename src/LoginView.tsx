@@ -1,9 +1,14 @@
 import React, {Component} from 'react';
-import {View, Text, TextInput, TouchableOpacity, StyleSheet, Image} from 'react-native';
+import {View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Button} from 'react-native';
+import * as Google from 'expo-google-app-auth';
+
+const CLIENT_ID = 'test';
+const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar';
 
 interface State {
     email : string;
     password : string;
+    calendars: [];
 }
 
 class LoginView extends Component < {},State > {
@@ -11,9 +16,35 @@ class LoginView extends Component < {},State > {
         super(props);
         this.state = {
             email: '',
-            password: ''
+            password: '',
+            calendars: []
         };
     }
+
+    handleSignIn = async () => {
+        try {
+          const result = await Google.logInAsync({
+            clientId: CLIENT_ID,
+            scopes: [CALENDAR_SCOPE],
+          });
+    
+          if (result.type === 'success') {
+            const accessToken = result.accessToken;
+    
+            const response = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            });
+    
+            const data = await response.json();
+            this.setState({ calendars: data.items });
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      };
+    
 
     handleEmailChange = (text : string) => {
         this.setState({email: text});
@@ -32,7 +63,7 @@ class LoginView extends Component < {},State > {
     };
 
     render() {
-        const {email, password} = this.state;
+        const {email, password, calendars} = this.state;
         return (
             <View style={styles.container}>
                 <Image
@@ -59,6 +90,14 @@ class LoginView extends Component < {},State > {
                     <TouchableOpacity style={styles.button} onPress={this.handleProceed}>
                         <Text style={styles.buttonText}>Local</Text>
                     </TouchableOpacity>
+
+                    <TouchableOpacity onPress={this.handleSignIn} style={styles.button}>
+                            <Text style={styles.buttonText}>Sign In</Text>
+                        </TouchableOpacity>
+                        {calendars.map(calendar => (
+                        <Text key={calendar.id}>{calendar.summary}</Text>
+                        ))}
+
                     </View>
                 </View>
             </View>
@@ -107,7 +146,7 @@ const styles =  StyleSheet.create({
         backgroundColor: '#0066cc',
         borderRadius: 5,
         padding: 10,
-        width: '40%'
+        width: '33%'
     },
     buttonText: {
         color: '#fff',
