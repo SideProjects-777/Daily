@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, Button, StyleSheet, TextInput, ScrollView } from 'react-native';
+import { View, Text, Button, StyleSheet, TextInput, ScrollView, Image } from 'react-native';
 import { TimePickerModal, DatePickerModal } from 'react-native-paper-dates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CalendarDate, SingleChange } from 'react-native-paper-dates/lib/typescript/Date/Calendar';
@@ -196,6 +196,10 @@ export default class NewEvent extends Component<Props, State> {
     
         return (
           <ScrollView>
+            <Image
+                  source={require('../assets/new.jpg')}
+                  style={styles.background}
+            />
             <View style={styles.centeredView}>
             <View style={styles.modalView}>
                   <Text style={styles.label}>Name</Text>
@@ -293,6 +297,12 @@ export default class NewEvent extends Component<Props, State> {
 
 const styles = StyleSheet.create({
     //Modal Window
+    background: {
+      width: '100%',
+      height: '100%',
+      position: 'absolute',
+      opacity:0.3
+  },
     centeredView: {
       flex: 1,
       justifyContent: 'center',
