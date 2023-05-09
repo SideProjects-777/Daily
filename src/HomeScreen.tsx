@@ -2,19 +2,16 @@ import React, {Component, ReactNode} from 'react';
 import { Alert, StyleSheet, Text, Animated, Easing, View, TouchableOpacity} from 'react-native';
 import {Agenda} from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import StorageService from './service/StorageService';
-import HomeScreenService from './service/HomeScreenService';
-
 import ActionButton from 'react-native-action-button';
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import Completed from './types/Completed';
 import NotCompletePassed from './types/NotCompletePassed';
 import NotCompletedFuture from './types/NotCompletedFuture';
 import NotCompleteCurrent from './types/NotCompleteCurrent';
-import { AgendaEntry, DateData, DayAgenda } from 'react-native-calendars/src/types';
+import { AgendaEntry, DayAgenda } from 'react-native-calendars/src/types';
 
-export interface Item {
+interface Item {
     start : string;
     end : string;
     name : string;
@@ -28,6 +25,7 @@ export interface Item {
 
 interface State {
     today : Date;
+    loading : boolean;
     items : Record < string, Item[] >;
     loadedKeys : string[];
 }
@@ -39,6 +37,7 @@ export default class HomeScreen extends Component < any, State > {
         super(props);
         this.state = {
             today: new Date(),
+            loading: false,
             items: {},
             loadedKeys: []
         };
@@ -49,26 +48,40 @@ export default class HomeScreen extends Component < any, State > {
         this.spin();
     }
 
+    componentDidUpdate(prevProps : any) {
+        const {route} = this.props;
+        const {key} = route
+            ?.params ?? {};
+        const {loadedKeys} = this.state;
 
-
-    componentDidUpdate(prevProps: any) {
-      const { route } = this.props;
-      if (route && route.params) {
-        const completed = route.params;
-        if (completed) {
-          this.loadDataSet();
-          this.props.route.params = undefined;
+        if (key && key !== prevProps.route
+            ?.params
+                ?.key && !loadedKeys.includes(key)) {
+            this.setState({loading: true});
+            this
+                .retrieveData(key)
+                .then(() => {
+                    this.setState({
+                        loadedKeys: [
+                            ...loadedKeys,
+                            key
+                        ],
+                        loading: false
+                    });
+                })
+                .catch((error) => {
+                    console.error(error);
+                    this.setState({loading: false});
+                });
         }
-      }
     }
-    
 
     retrieveData = async(key : string) => {
         try {
             const value = await AsyncStorage.getItem(key);
             if (value !== null) {
                 const parsedJSON : Item = JSON.parse(value);
-                const ourDate = HomeScreenService.parseDateIntoStringAndVice(new Date(parsedJSON.date));
+                const ourDate = this.parseDateIntoStringAndVice(new Date(parsedJSON.date));
 
                 if (!this.state.items[ourDate]) {
                     this.state.items[ourDate] = [];
@@ -115,15 +128,17 @@ export default class HomeScreen extends Component < any, State > {
     }
 
     loadDataSet = async() => {
+        this.setState({loading: true});
         let items : {
             [key : string] : any[]
         } = {};
         try {
             const keys = await AsyncStorage.getAllKeys();
             if (keys.length === 0) {
-                var today = HomeScreenService.parseDateIntoStringAndVice(new Date());
+                var today = this.parseDateIntoStringAndVice(new Date());
                 items[today] = [];
                 this.setState({items: items});
+                this.setState({loading: false});
                 return;
             }
             this.setState({loadedKeys: keys});
@@ -134,7 +149,8 @@ export default class HomeScreen extends Component < any, State > {
                 const value = await AsyncStorage.getItem(key);
                 const parsedJSON = JSON.parse(value !);
                 let timestamp = new Date(parsedJSON.date).getTime();
-                var ourDate = HomeScreenService.parseDateIntoStringAndVice(parsedJSON.date);
+                console.log(parsedJSON.date);
+                var ourDate = this.parseDateIntoStringAndVice(parsedJSON.date);
 
                 timestamps.push(timestamp);
 
@@ -155,15 +171,11 @@ export default class HomeScreen extends Component < any, State > {
                 });
                 items[ourDate].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
             }
-            var today = HomeScreenService.parseDateIntoStringAndVice(new Date());
-            if(items[today]==undefined){
-              items[today] = [];
-            }
             this.setState({items: items});
         } catch (error) {
             console.error(error);
         } finally {
-            //this.setState({loading: false});
+            this.setState({loading: false});
         }
     }
 
@@ -172,6 +184,8 @@ export default class HomeScreen extends Component < any, State > {
             inputRange: [0, 1],
             outputRange: ['0deg', '360deg']
         });
+        const { loading } = this.state;
+        if (!loading) {
           return (
             <SafeAreaProvider style={{ flex: 1 }}>
               <Agenda
@@ -179,7 +193,6 @@ export default class HomeScreen extends Component < any, State > {
                 selected={this.state.today}
                 renderItem={this.renderItem}
                 rowHasChanged={this.rowHasChanged}
-                loadItemsForMonth={this.dateChanged}
                 showClosingKnob={true}
                 monthFormat={'MMMM' + ' - ' + 'yyyy'}
                 renderEmptyDate={this.renderEmptyDate}
@@ -190,6 +203,18 @@ export default class HomeScreen extends Component < any, State > {
               />
             </SafeAreaProvider>
           );
+        } else {
+            return (
+                <View style={styles.container}>
+                  <Animated.Text
+                    style={[styles.logo, { transform: [{ rotate: spin }] }]}
+                  >
+                    Daily App
+                  </Animated.Text>
+                  <Text style={styles.text}>Loading...</Text>
+                </View>
+              );
+        }
       }
 
 
@@ -219,8 +244,10 @@ export default class HomeScreen extends Component < any, State > {
             {text: 'Remove', onPress: () => {
               StorageService.delete(reservation.key);
               let {items} = this.state;
-              let updKey = HomeScreenService.parseDateIntoStringAndVice(reservation.date);              
-              items[updKey] = HomeScreenService.removeFromList(items[updKey],reservation.key);
+
+              let updKey = this.parseDateIntoStringAndVice(reservation.date);
+              const isToday = new Date(updKey).toDateString() === new Date().toDateString();
+              items[updKey] = isToday ? [] : undefined;
               this.setState({items:items});
             }},
           ]);
@@ -230,12 +257,7 @@ export default class HomeScreen extends Component < any, State > {
         if(!reservation.completed){
           Alert.alert('Is this event completed?', reservation.name, [
             {
-              text: 'Edit',
-              onPress: () => this.props.navigation.navigate('Add', {reservation}),
-              style: 'cancel',
-            },
-            {
-              text: 'Cancel',
+              text: 'Close',
               onPress: () => console.log('Cancel Pressed'),
               style: 'cancel',
             },
@@ -247,11 +269,6 @@ export default class HomeScreen extends Component < any, State > {
           ]);
         }else{
           Alert.alert('Event became valid?', reservation.name, [
-            {
-              text: 'Edit',
-              onPress: () => this.props.navigation.navigate('Add', {reservation}),
-              style: 'cancel',
-            },
             {
               text: 'Close',
               onPress: () => console.log('Cancel Pressed'),
@@ -365,19 +382,14 @@ export default class HomeScreen extends Component < any, State > {
         }
       }
       
+      parseDateIntoStringAndVice = (data: Date) => {
+        const date = new Date(data);
+        const formattedDate = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+        return formattedDate
+      }
     
       rowHasChanged = (r1: AgendaEntry, r2:AgendaEntry) => {
         return r1.name !== r2.name;
-      }
-
-      dateChanged = (date: DateData) => {
-        let {items} = this.state;
-        var ourDate = HomeScreenService.parseDateIntoStringAndVice(new Date(date.dateString));
-        if (!items[ourDate]) {
-          items[ourDate] = [];
-        }
-        this.setState({items: items});
-
       }
     
       timeToString(time:string) {
