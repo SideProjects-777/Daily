@@ -1,11 +1,15 @@
 import React, { Component } from 'react';
-import { View, Text, Button, StyleSheet, TextInput, ScrollView } from 'react-native';
+import { View, Text, Button, StyleSheet, TextInput, ScrollView, Image } from 'react-native';
 import { TimePickerModal, DatePickerModal } from 'react-native-paper-dates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CalendarDate, SingleChange } from 'react-native-paper-dates/lib/typescript/Date/Calendar';
+
 import StorageService from './service/StorageService';
+import NewEventService from './service/NewEventService';
+
 import { en, registerTranslation} from 'react-native-paper-dates'
-registerTranslation('en', en)
+
+registerTranslation('en', en);
 type Props = {
   navigation: any;
 };
@@ -21,8 +25,8 @@ type State = {
   showDatePicker: boolean;
   key: string;
   validation:{
-    from: Date,
-    to: Date,    
+    from: Date | number,
+    to: Date | number,    
   };
   error:boolean;
 };
@@ -41,10 +45,34 @@ export default class NewEvent extends Component<Props, State> {
     key: '',
     validation:{
       from: new Date(),
-      to: new Date(),
+      to: new Date(new Date().setHours(new Date().getHours() + 1)),
     },
     error:false,
   };
+
+  componentDidMount(): void {
+    const {route} = this.props;
+    const {reservation} = route
+    ?.params ?? {};    
+    if(reservation){
+      this.setState({
+        name: reservation.name,
+        description: reservation.description,
+        start: reservation.start,
+        end: reservation.end,
+        date: new Date(reservation.date),
+        showFromTimePicker: false,
+        showToTimePicker: false,
+        showDatePicker: false,
+        key: reservation.key, 
+        validation:{
+          from: NewEventService.parseDateLatest(new Date(reservation.date), reservation.start),
+          to: NewEventService.parseDateLatest(new Date(reservation.date), reservation.end),
+        },
+        error:false,
+      });
+    }
+  }
 
 
   restoreState = () => {
@@ -60,7 +88,7 @@ export default class NewEvent extends Component<Props, State> {
       key: '',
       validation:{
         from: new Date(),
-        to: new Date(),
+        to: new Date(new Date().setHours(new Date().getHours() + 1)),
       },
       error:false,
     });
@@ -68,13 +96,41 @@ export default class NewEvent extends Component<Props, State> {
 
 
   handleSave = () => {
-    const key = Math.random().toString(36).substring(2, 14);
-    this.setState({ key });
+    const {key} = this.state;
+    const newKey = Math.random().toString(36).substring(2, 14);
+    
     if(!this.validate()){
-      this.storeData(key.toString());
-      this.restoreState();
-
-      this.props.navigation.navigate('Home', { key });
+      if(key){
+        const event = {
+          name: this.state.name,
+          description: this.state.description,
+          start: this.state.start,
+          end: this.state.end,
+          date: NewEventService.parseDateLatest(this.state.date, this.state.start),
+          completed: false,
+          key:key,
+          updated:true,
+          finalized:false,
+        };
+        StorageService.updateData(key,event);
+        this.props.navigation.navigate('Home',{completed:true});
+      }else{  
+        const event = {
+          name: this.state.name,
+          description: this.state.description,
+          start: this.state.start,
+          end: this.state.end,
+          date: NewEventService.parseDateLatest(this.state.date, this.state.start),
+          completed: false,
+          key:newKey,
+          updated:false,
+          finalized:false,
+        };      
+        StorageService.post(newKey,event); 
+        this.props.navigation.navigate('Home', {completed:true});       
+      }
+      this.restoreState();  
+      
     }else{
       this.setState({error:true})
     }
@@ -84,37 +140,6 @@ export default class NewEvent extends Component<Props, State> {
   handleCancel = () => {
     this.restoreState();
     this.props.navigation.navigate('Home');
-  };
-
-
-
-  parseDateLatest = (date: CalendarDate): CalendarDate => {
-    let { start } = this.state;
-    let startArr = start.split(':');
-    const hour = parseInt(startArr[0]);
-    const minute = parseInt(startArr[1]);
-    if (date) {
-        date.setUTCHours(hour, minute);
-    }
-    return date;
-  };
-
-  storeData = async (key: string) => {
-    try {
-      const body = {
-        name: this.state.name,
-        description: this.state.description,
-        start: this.state.start,
-        end: this.state.end,
-        date: this.parseDateLatest(this.state.date),
-        completed: false,
-      };
-      const jsonString = JSON.stringify(body);
-      StorageService.post(key,jsonString);
-    } catch (e) {
-      console.error(e);
-      console.log('Error storing value in AsyncStorage');
-    }
   };
 
 
@@ -193,6 +218,7 @@ export default class NewEvent extends Component<Props, State> {
           validation,
           error,
           showDatePicker } = this.state;
+          
     
         return (
           <ScrollView>
@@ -255,7 +281,7 @@ export default class NewEvent extends Component<Props, State> {
                       visible={showToTimePicker}
                       onDismiss={this.onDismissTo}
                       onConfirm={this.onConfirmTo}
-                      hours={(validation.to?.getHours())+1}
+                      hours={(validation.to?.getHours())}
                       minutes={validation.to?.getMinutes()}
                       label={"To"}
                       animationType='fade'
@@ -293,6 +319,12 @@ export default class NewEvent extends Component<Props, State> {
 
 const styles = StyleSheet.create({
     //Modal Window
+    background: {
+      width: '100%',
+      height: '100%',
+      position: 'absolute',
+      opacity:0.3
+  },
     centeredView: {
       flex: 1,
       justifyContent: 'center',
