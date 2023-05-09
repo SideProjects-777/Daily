@@ -97,27 +97,37 @@ export default class NewEvent extends Component<Props, State> {
 
 
   handleSave = () => {
-    const body = {
-      name: this.state.name,
-      description: this.state.description,
-      start: this.state.start,
-      end: this.state.end,
-      date: NewEventService.parseDateLatest(this.state.date, this.state.start),
-      completed: false,
-    };
     const {key} = this.state;
+    const newKey = Math.random().toString(36).substring(2, 14);
+    
     if(!this.validate()){
       if(key){
-        console.log('key exists');
-        console.log(body)
-        StorageService.updateData(key,body);
-      }else{
-        const newKey = Math.random().toString(36).substring(2, 14);
-        StorageService.post(newKey,body);        
+        const event = {
+          name: this.state.name,
+          description: this.state.description,
+          start: this.state.start,
+          end: this.state.end,
+          date: NewEventService.parseDateLatest(this.state.date, this.state.start),
+          completed: false,
+          key:key
+        };
+        StorageService.updateData(key,event);
+        this.props.navigation.navigate('Home',  event);
+      }else{  
+        const event = {
+          name: this.state.name,
+          description: this.state.description,
+          start: this.state.start,
+          end: this.state.end,
+          date: NewEventService.parseDateLatest(this.state.date, this.state.start),
+          completed: false,
+          key:newKey
+        };      
+        StorageService.post(newKey,event); 
+        this.props.navigation.navigate('Home',  event);       
       }
-      this.restoreState();
-  
-      this.props.navigation.navigate('Home', { key });
+      this.restoreState();  
+      
     }else{
       this.setState({error:true})
     }

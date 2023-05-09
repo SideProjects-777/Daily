@@ -53,29 +53,32 @@ export default class HomeScreen extends Component < any, State > {
 
     componentDidUpdate(prevProps : any) {
         const {route} = this.props;
-        const {key} = route
-            ?.params ?? {};
-        const {loadedKeys} = this.state;
-        if (key && key !== prevProps.route
-            ?.params
-                ?.key && !loadedKeys.includes(key)) {
-            this.setState({loading: true});
-            this
-                .retrieveData(key)
-                .then(() => {
-                    this.setState({
-                        loadedKeys: [
-                            ...loadedKeys,
-                            key
-                        ],
-                        loading: false
-                    });
-                })
-                .catch((error) => {
-                    console.error(error);
-                    this.setState({loading: false});
-                });
+        let {items} = this.state;
+        if(route){
+          const event = route.params;          
+          if(event && !HomeScreenService.checkIfKeyIsGiven(items,event.key)){            
+            console.log("we are inside")
+            var ourDate = HomeScreenService.parseDateIntoStringAndVice(event.date);
+            if (!items[ourDate]) {
+              items[ourDate] = [];
+            }
+
+            items[ourDate].push({
+                start: event.start,
+                end: event.end,
+                name: event.name,
+                description: event.description,
+                height: 100,
+                completed: event.completed,
+                date: event.date,
+                day: event.date,
+                key: event.key
+            });
+            items[ourDate].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            this.setState({items: items});
+            }
         }
+
     }
 
     retrieveData = async(key : string) => {
@@ -194,6 +197,7 @@ export default class HomeScreen extends Component < any, State > {
                 selected={this.state.today}
                 renderItem={this.renderItem}
                 rowHasChanged={this.rowHasChanged}
+                //onDayChange={}
                 showClosingKnob={true}
                 monthFormat={'MMMM' + ' - ' + 'yyyy'}
                 renderEmptyDate={this.renderEmptyDate}
