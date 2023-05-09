@@ -9,7 +9,7 @@ class NewEventService {
         const hour = parseInt(startArr[0]);
         const minute = parseInt(startArr[1]);
         if (date) {
-            date.setUTCHours(hour, minute);
+            date.setHours(hour, minute);
         }
         return new Date(date);
     };

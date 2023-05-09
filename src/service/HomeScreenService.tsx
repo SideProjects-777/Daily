@@ -28,6 +28,11 @@ class HomeScreenService {
 
     }
 
+    static update(items:Item[],item:Item){
+        const updatedItems = items.map((obj) =>  obj.key === item.key ? item : obj);
+        return updatedItems;
+    }
+
     static parseDateIntoStringAndVice = (data: Date) => {
         const date = new Date(data);
         const formattedDate = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;

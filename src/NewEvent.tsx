@@ -55,10 +55,9 @@ export default class NewEvent extends Component<Props, State> {
     const {reservation} = route
     ?.params ?? {};    
     if(reservation){
-      console.log(reservation);
       this.setState({
         name: reservation.name,
-        description: reservation.name,
+        description: reservation.description,
         start: reservation.start,
         end: reservation.end,
         date: new Date(reservation.date),
@@ -109,10 +108,12 @@ export default class NewEvent extends Component<Props, State> {
           end: this.state.end,
           date: NewEventService.parseDateLatest(this.state.date, this.state.start),
           completed: false,
-          key:key
+          key:key,
+          updated:true,
+          finalized:false,
         };
         StorageService.updateData(key,event);
-        this.props.navigation.navigate('Home',  event);
+        this.props.navigation.navigate('Home',{completed:true});
       }else{  
         const event = {
           name: this.state.name,
@@ -121,10 +122,12 @@ export default class NewEvent extends Component<Props, State> {
           end: this.state.end,
           date: NewEventService.parseDateLatest(this.state.date, this.state.start),
           completed: false,
-          key:newKey
+          key:newKey,
+          updated:false,
+          finalized:false,
         };      
         StorageService.post(newKey,event); 
-        this.props.navigation.navigate('Home',  event);       
+        this.props.navigation.navigate('Home', {completed:true});       
       }
       this.restoreState();  
       
@@ -219,13 +222,6 @@ export default class NewEvent extends Component<Props, State> {
     
         return (
           <ScrollView>
-            {/*
-            <Image
-                  source={require('../assets/new.jpg')}
-                  style={styles.background}
-            /> 
-            */
-            }
             <View style={styles.centeredView}>
             <View style={styles.modalView}>
                   <Text style={styles.label}>Name</Text>

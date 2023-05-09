@@ -28,7 +28,6 @@ export interface Item {
 
 interface State {
     today : Date;
-    loading : boolean;
     items : Record < string, Item[] >;
     loadedKeys : string[];
 }
@@ -40,7 +39,6 @@ export default class HomeScreen extends Component < any, State > {
         super(props);
         this.state = {
             today: new Date(),
-            loading: false,
             items: {},
             loadedKeys: []
         };
@@ -51,35 +49,19 @@ export default class HomeScreen extends Component < any, State > {
         this.spin();
     }
 
-    componentDidUpdate(prevProps : any) {
-        const {route} = this.props;
-        let {items} = this.state;
-        if(route){
-          const event = route.params;          
-          if(event && !HomeScreenService.checkIfKeyIsGiven(items,event.key)){            
-            console.log("we are inside")
-            var ourDate = HomeScreenService.parseDateIntoStringAndVice(event.date);
-            if (!items[ourDate]) {
-              items[ourDate] = [];
-            }
 
-            items[ourDate].push({
-                start: event.start,
-                end: event.end,
-                name: event.name,
-                description: event.description,
-                height: 100,
-                completed: event.completed,
-                date: event.date,
-                day: event.date,
-                key: event.key
-            });
-            items[ourDate].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-            this.setState({items: items});
-            }
+
+    componentDidUpdate(prevProps: any) {
+      const { route } = this.props;
+      if (route && route.params) {
+        const completed = route.params;
+        if (completed) {
+          this.loadDataSet();
+          this.props.route.params = undefined;
         }
-
+      }
     }
+    
 
     retrieveData = async(key : string) => {
         try {
@@ -133,7 +115,6 @@ export default class HomeScreen extends Component < any, State > {
     }
 
     loadDataSet = async() => {
-        this.setState({loading: true});
         let items : {
             [key : string] : any[]
         } = {};
@@ -143,7 +124,6 @@ export default class HomeScreen extends Component < any, State > {
                 var today = HomeScreenService.parseDateIntoStringAndVice(new Date());
                 items[today] = [];
                 this.setState({items: items});
-                this.setState({loading: false});
                 return;
             }
             this.setState({loadedKeys: keys});
@@ -175,11 +155,15 @@ export default class HomeScreen extends Component < any, State > {
                 });
                 items[ourDate].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
             }
+            var today = HomeScreenService.parseDateIntoStringAndVice(new Date());
+            if(items[today]==undefined){
+              items[today] = [];
+            }
             this.setState({items: items});
         } catch (error) {
             console.error(error);
         } finally {
-            this.setState({loading: false});
+            //this.setState({loading: false});
         }
     }
 
@@ -188,8 +172,6 @@ export default class HomeScreen extends Component < any, State > {
             inputRange: [0, 1],
             outputRange: ['0deg', '360deg']
         });
-        const { loading } = this.state;
-        if (!loading) {
           return (
             <SafeAreaProvider style={{ flex: 1 }}>
               <Agenda
@@ -208,18 +190,6 @@ export default class HomeScreen extends Component < any, State > {
               />
             </SafeAreaProvider>
           );
-        } else {
-            return (
-                <View style={styles.container}>
-                  <Animated.Text
-                    style={[styles.logo, { transform: [{ rotate: spin }] }]}
-                  >
-                    Daily App
-                  </Animated.Text>
-                  <Text style={styles.text}>Loading...</Text>
-                </View>
-              );
-        }
       }
 
 
