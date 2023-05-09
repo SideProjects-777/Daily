@@ -12,7 +12,7 @@ import Completed from './types/Completed';
 import NotCompletePassed from './types/NotCompletePassed';
 import NotCompletedFuture from './types/NotCompletedFuture';
 import NotCompleteCurrent from './types/NotCompleteCurrent';
-import { AgendaEntry, DayAgenda } from 'react-native-calendars/src/types';
+import { AgendaEntry, DateData, DayAgenda } from 'react-native-calendars/src/types';
 
 export interface Item {
     start : string;
@@ -197,7 +197,7 @@ export default class HomeScreen extends Component < any, State > {
                 selected={this.state.today}
                 renderItem={this.renderItem}
                 rowHasChanged={this.rowHasChanged}
-                //onDayChange={}
+                loadItemsForMonth={this.dateChanged}
                 showClosingKnob={true}
                 monthFormat={'MMMM' + ' - ' + 'yyyy'}
                 renderEmptyDate={this.renderEmptyDate}
@@ -398,6 +398,16 @@ export default class HomeScreen extends Component < any, State > {
     
       rowHasChanged = (r1: AgendaEntry, r2:AgendaEntry) => {
         return r1.name !== r2.name;
+      }
+
+      dateChanged = (date: DateData) => {
+        let {items} = this.state;
+        var ourDate = HomeScreenService.parseDateIntoStringAndVice(new Date(date.dateString));
+        if (!items[ourDate]) {
+          items[ourDate] = [];
+        }
+        this.setState({items: items});
+
       }
     
       timeToString(time:string) {
