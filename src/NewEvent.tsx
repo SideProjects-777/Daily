@@ -105,7 +105,6 @@ export default class NewEvent extends Component<Props, State> {
       date: NewEventService.parseDateLatest(this.state.date, this.state.start),
       completed: false,
     };
-
     const {key} = this.state;
     if(!this.validate()){
       if(key){

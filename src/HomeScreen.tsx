@@ -2,7 +2,10 @@ import React, {Component, ReactNode} from 'react';
 import { Alert, StyleSheet, Text, Animated, Easing, View, TouchableOpacity} from 'react-native';
 import {Agenda} from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import StorageService from './service/StorageService';
+import HomeScreenService from './service/HomeScreenService';
+
 import ActionButton from 'react-native-action-button';
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import Completed from './types/Completed';
@@ -11,7 +14,7 @@ import NotCompletedFuture from './types/NotCompletedFuture';
 import NotCompleteCurrent from './types/NotCompleteCurrent';
 import { AgendaEntry, DayAgenda } from 'react-native-calendars/src/types';
 
-interface Item {
+export interface Item {
     start : string;
     end : string;
     name : string;
@@ -53,8 +56,6 @@ export default class HomeScreen extends Component < any, State > {
         const {key} = route
             ?.params ?? {};
         const {loadedKeys} = this.state;
-        console.log(key)
-
         if (key && key !== prevProps.route
             ?.params
                 ?.key && !loadedKeys.includes(key)) {
@@ -82,7 +83,7 @@ export default class HomeScreen extends Component < any, State > {
             const value = await AsyncStorage.getItem(key);
             if (value !== null) {
                 const parsedJSON : Item = JSON.parse(value);
-                const ourDate = this.parseDateIntoStringAndVice(new Date(parsedJSON.date));
+                const ourDate = HomeScreenService.parseDateIntoStringAndVice(new Date(parsedJSON.date));
 
                 if (!this.state.items[ourDate]) {
                     this.state.items[ourDate] = [];
@@ -136,7 +137,7 @@ export default class HomeScreen extends Component < any, State > {
         try {
             const keys = await AsyncStorage.getAllKeys();
             if (keys.length === 0) {
-                var today = this.parseDateIntoStringAndVice(new Date());
+                var today = HomeScreenService.parseDateIntoStringAndVice(new Date());
                 items[today] = [];
                 this.setState({items: items});
                 this.setState({loading: false});
@@ -150,7 +151,7 @@ export default class HomeScreen extends Component < any, State > {
                 const value = await AsyncStorage.getItem(key);
                 const parsedJSON = JSON.parse(value !);
                 let timestamp = new Date(parsedJSON.date).getTime();
-                var ourDate = this.parseDateIntoStringAndVice(parsedJSON.date);
+                var ourDate = HomeScreenService.parseDateIntoStringAndVice(parsedJSON.date);
 
                 timestamps.push(timestamp);
 
@@ -244,10 +245,8 @@ export default class HomeScreen extends Component < any, State > {
             {text: 'Remove', onPress: () => {
               StorageService.delete(reservation.key);
               let {items} = this.state;
-
-              let updKey = this.parseDateIntoStringAndVice(reservation.date);
-              const isToday = new Date(updKey).toDateString() === new Date().toDateString();
-              items[updKey] = isToday ? [] : undefined;
+              let updKey = HomeScreenService.parseDateIntoStringAndVice(reservation.date);              
+              items[updKey] = HomeScreenService.removeFromList(items[updKey],reservation.key);
               this.setState({items:items});
             }},
           ]);
@@ -392,11 +391,6 @@ export default class HomeScreen extends Component < any, State > {
         }
       }
       
-      parseDateIntoStringAndVice = (data: Date) => {
-        const date = new Date(data);
-        const formattedDate = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
-        return formattedDate
-      }
     
       rowHasChanged = (r1: AgendaEntry, r2:AgendaEntry) => {
         return r1.name !== r2.name;
