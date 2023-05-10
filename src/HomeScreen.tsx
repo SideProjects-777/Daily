@@ -159,7 +159,7 @@ export default class HomeScreen extends Component < any, State > {
           Alert.alert('Do you want to remove the event?', reservation.name, [
             {
               text: 'Close',
-              onPress: () => console.log('Cancel Pressed'),
+              //onPress: () => 
               style: 'cancel',
             },
             {text: 'Remove', onPress: () => {
@@ -182,7 +182,7 @@ export default class HomeScreen extends Component < any, State > {
             },
             {
               text: 'Cancel',
-              onPress: () => console.log('Cancel Pressed'),
+              //onPress: () => 
               style: 'cancel',
             },
             {text: 'Completed', onPress: () => {
@@ -200,7 +200,7 @@ export default class HomeScreen extends Component < any, State > {
             },
             {
               text: 'Close',
-              onPress: () => console.log('Cancel Pressed'),
+              //onPress: () =>,
               style: 'cancel',
             },
             {text: 'Activate', onPress: () => {
