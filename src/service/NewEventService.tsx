@@ -5,6 +5,7 @@ class NewEventService {
 
 
     static parseDateLatest = (date: CalendarDate, start:string): CalendarDate => {
+        if(start===''){return new Date();}
         let startArr = start.split(':');
         const hour = parseInt(startArr[0]);
         const minute = parseInt(startArr[1]);

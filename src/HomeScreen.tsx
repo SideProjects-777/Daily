@@ -1,5 +1,5 @@
 import React, {Component, ReactNode} from 'react';
-import { Alert, StyleSheet, Text, Animated, Easing, View, TouchableOpacity} from 'react-native';
+import { Alert, Text, View, TouchableOpacity} from 'react-native';
 import {Agenda} from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -22,31 +22,28 @@ export interface Item {
     height : number;
     completed : boolean;
     date : string;
-    day : string;
     key : string;
+    timeless:boolean;
 }
 
 interface State {
     today : Date;
     items : Record < string, Item[] >;
-    loadedKeys : string[];
 }
 
 export default class HomeScreen extends Component < any, State > {
-    private spinValue = new Animated.Value(0);
+    
 
     constructor(props : {}) {
         super(props);
         this.state = {
             today: new Date(),
             items: {},
-            loadedKeys: []
         };
     }
 
     componentDidMount() {
         this.loadDataSet();
-        this.spin();
     }
 
 
@@ -63,61 +60,9 @@ export default class HomeScreen extends Component < any, State > {
     }
     
 
-    retrieveData = async(key : string) => {
-        try {
-            const value = await AsyncStorage.getItem(key);
-            if (value !== null) {
-                const parsedJSON : Item = JSON.parse(value);
-                const ourDate = HomeScreenService.parseDateIntoStringAndVice(new Date(parsedJSON.date));
-
-                if (!this.state.items[ourDate]) {
-                    this.state.items[ourDate] = [];
-                }
-
-                var item : Item = {
-                    start: parsedJSON.start,
-                    end: parsedJSON.end,
-                    name: parsedJSON.name,
-                    description: parsedJSON.description,
-                    height: 100,
-                    completed: parsedJSON.completed,
-                    date: parsedJSON.date,
-                    key: key,
-                    day: parsedJSON.date
-                }
-
-                this
-                    .state
-                    .items[ourDate]
-                    .push(item);
-                this
-                    .state
-                    .items[ourDate]
-                    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    spin() {
-        this
-            .spinValue
-            .setValue(0);
-        Animated
-            .timing(this.spinValue, {
-            toValue: 1,
-            duration: 3000,
-            easing: Easing.linear,
-            useNativeDriver: true
-        })
-            .start(() => this.spin());
-    }
-
     loadDataSet = async() => {
-        let items : {
-            [key : string] : any[]
-        } = {};
+        let items : { [key : string] : any[] } = {};
+        this.setState({items:{}})
         try {
             const keys = await AsyncStorage.getAllKeys();
             if (keys.length === 0) {
@@ -126,17 +71,13 @@ export default class HomeScreen extends Component < any, State > {
                 this.setState({items: items});
                 return;
             }
-            this.setState({loadedKeys: keys});
 
-            let timestamps : number[] = [];
+            items = HomeScreenService.loopInGivenMonth(items, new Date());
 
             for (const key of keys) {
                 const value = await AsyncStorage.getItem(key);
                 const parsedJSON = JSON.parse(value !);
-                let timestamp = new Date(parsedJSON.date).getTime();
                 var ourDate = HomeScreenService.parseDateIntoStringAndVice(parsedJSON.date);
-
-                timestamps.push(timestamp);
 
                 if (!items[ourDate]) {
                     items[ourDate] = [];
@@ -150,10 +91,19 @@ export default class HomeScreen extends Component < any, State > {
                     height: 100,
                     completed: parsedJSON.completed,
                     date: parsedJSON.date,
-                    day: parsedJSON.date,
-                    key: key
+                    key: key,
+                    timeless:parsedJSON.timeless
                 });
-                items[ourDate].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                items[ourDate].sort((a, b) => {
+                  if (a.timeless && !b.timeless) {
+                    return -1; // a comes before b
+                  } else if (!a.timeless && b.timeless) {
+                    return 1; // b comes before a
+                  }
+                  else{
+                    return new Date(a.date).getTime() - new Date(b.date).getTime()
+                  }
+                });
             }
             var today = HomeScreenService.parseDateIntoStringAndVice(new Date());
             if(items[today]==undefined){
@@ -168,15 +118,11 @@ export default class HomeScreen extends Component < any, State > {
     }
 
     render(): React.ReactNode {
-        const spin = this.spinValue.interpolate({
-            inputRange: [0, 1],
-            outputRange: ['0deg', '360deg']
-        });
           return (
             <SafeAreaProvider style={{ flex: 1 }}>
               <Agenda
                 items={this.state.items}
-                selected={this.state.today}
+                selected={this.state.today.toISOString()}
                 renderItem={this.renderItem}
                 rowHasChanged={this.rowHasChanged}
                 loadItemsForMonth={this.dateChanged}
@@ -276,7 +222,29 @@ export default class HomeScreen extends Component < any, State > {
         meetingEnd.setHours(meetingEnd.getHours() - 2);
       
         const time = reservation.end.split(":");
-        meetingEnd.setHours(time[0], time[1]);
+        meetingEnd.setHours(Number.parseInt(time[0]), Number.parseInt(time[1]));
+
+        if(reservation.timeless && !reservation.completed){
+          return (
+            <TouchableOpacity
+              onLongPress={() => this.deleteEvent(reservation)}
+              onPress={() => this.createCompletness(reservation)}
+              style={{
+                width: '95%',
+                height: reservation.height,
+                marginBottom: 10,
+                marginTop: 5,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'white',
+                borderRadius: 20,
+                overflow: 'hidden',
+              }}
+            >
+              <NotCompletePassed data={reservation} />
+            </TouchableOpacity>
+          );
+        }
       
         if (reservation.completed) {
           return (
@@ -372,39 +340,9 @@ export default class HomeScreen extends Component < any, State > {
 
       dateChanged = (date: DateData) => {
         let {items} = this.state;
-        var ourDate = HomeScreenService.parseDateIntoStringAndVice(new Date(date.dateString));
-        if (!items[ourDate]) {
-          items[ourDate] = [];
-        }
+        items = HomeScreenService.loopInGivenMonth(items, new Date(date.dateString));
         this.setState({items: items});
 
-      }
-    
-      timeToString(time:string) {
-        const date = new Date(time);
-        return date.toISOString().split('T')[0];
-      }
-      
+      }    
 
 }
-
-
-const styles = StyleSheet.create({
-    //beaty spinner
-    container: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#fff'
-    },
-    logo: {
-      fontSize: 40,
-      fontWeight: 'bold',
-      color: '#333'
-    },
-    text: {
-      marginTop: 20,
-      fontSize: 20,
-      color: '#333'
-    }
-  });

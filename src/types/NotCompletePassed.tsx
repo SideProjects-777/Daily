@@ -8,10 +8,10 @@ interface Props {
     end: string;
     name: string;
     description: string;
+    timeless:boolean;
   }
 }
-
-function NotCompletePassed(props: Props) {
+const NotCompletePassed : React.FC < Props > = ({ data }) => {
   return (
     <>
       <View
@@ -35,9 +35,13 @@ function NotCompletePassed(props: Props) {
           <MaterialCommunityIcons name="bell" color='white' size={15} />
         </Text>
       </View>
-      <Text style={{ fontSize:18,color:'black'}}>{props.data.start} - {props.data.end}</Text>
-      <Text style={{ fontSize:16,color:'black'}}>{props.data.name}</Text>
-      <Text style={{ fontSize:14,color:'black'}}>{props.data.description}</Text>
+
+      {!data.timeless ? (
+          <><Text style={{ fontSize: 18, color: 'black' }}>{data.start} - {data.end}</Text><Text style={{ fontSize: 16, color: 'black' }}>{data.name}</Text><Text style={{ fontSize: 14, color: 'black' }}>{data.description}</Text></>
+      ) : 
+      <><Text style={{ fontSize: 18, color: 'black' }}>{data.name}</Text><Text style={{ fontSize: 16, color: 'black' }}>{data.description}</Text></>
+      }      
+
     </>
   );
 }

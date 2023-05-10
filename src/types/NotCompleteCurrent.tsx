@@ -12,6 +12,7 @@ type Props = {
 };
 
 const NotCompleteCurrent: FC<Props> = ({ data }) => {
+
     return (
       <>
         <View
@@ -35,7 +36,7 @@ const NotCompleteCurrent: FC<Props> = ({ data }) => {
             <MaterialCommunityIcons name="update" color='white' size={15} />
           </Text>
         </View>
-        <Text style={{ fontSize: 18, color: 'black' }}>{data.start} - {data.end}</Text>
+        <Text style={{ fontSize:18,color:'black'}}>{data.start} - {data.end}</Text>
         <Text style={{ fontSize: 16, color: 'black' }}>{data.name}</Text>
         <Text style={{ fontSize: 14, color: 'black' }}>{data.description}</Text>
       </>
