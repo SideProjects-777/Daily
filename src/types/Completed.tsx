@@ -11,26 +11,11 @@ interface Props {
         name: string;
         description: string;
         key:string;
+        timeless:boolean;
     }
 }
 
 const Completed : React.FC < Props > = ({ data }) => {
-
-    const deleteEvent = async () => {
-        Alert.alert('Do you want to remove the event?', data.name, [
-          {
-            text: 'Close',
-            onPress: () => console.log('Cancel Pressed'),
-            style: 'cancel',
-          },
-          {
-            text: 'Remove',
-            onPress: () => {
-              StorageService.delete(data.key);
-            },
-          },
-        ]);
-    };
 
 
     return ( 
@@ -60,9 +45,12 @@ const Completed : React.FC < Props > = ({ data }) => {
                 <MaterialCommunityIcons name="check-outline" color="white" size={15}/>
             </Text>
         </View> 
-        <Text style = {{ fontSize: 18, color: 'grey' }} > {data.start} - {data.end} </Text>
-        <Text style={{ fontSize: 16, color: 'grey' }}>{data.name}</Text > 
-        <Text style={{ fontSize: 14, color: 'grey'}}>{data.description}</Text>
+        {!data.timeless ? (
+          <><Text style={{ fontSize: 18, color: 'black' }}>{data.start} - {data.end}</Text><Text style={{ fontSize: 16, color: 'black' }}>{data.name}</Text><Text style={{ fontSize: 14, color: 'black' }}>{data.description}</Text></>
+      ) : 
+      <><Text style={{ fontSize: 18, color: 'black' }}>{data.name}</Text><Text style={{ fontSize: 16, color: 'black' }}>{data.description}</Text></>
+      }      
+
     </>
     );
 }

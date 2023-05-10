@@ -101,16 +101,16 @@ export default class NewEvent extends Component<Props, State> {
     
     if(!this.validate()){
       if(key){
+
         const event = {
           name: this.state.name,
           description: this.state.description,
           start: this.state.start,
           end: this.state.end,
+          timeless:this.isTimeLess(),
           date: NewEventService.parseDateLatest(this.state.date, this.state.start),
           completed: false,
           key:key,
-          updated:true,
-          finalized:false,
         };
         StorageService.updateData(key,event);
         this.props.navigation.navigate('Home',{completed:true});
@@ -120,11 +120,10 @@ export default class NewEvent extends Component<Props, State> {
           description: this.state.description,
           start: this.state.start,
           end: this.state.end,
+          timeless:this.isTimeLess(),
           date: NewEventService.parseDateLatest(this.state.date, this.state.start),
           completed: false,
           key:newKey,
-          updated:false,
-          finalized:false,
         };      
         StorageService.post(newKey,event); 
         this.props.navigation.navigate('Home', {completed:true});       
@@ -153,17 +152,26 @@ export default class NewEvent extends Component<Props, State> {
     this.setState({ showFromTimePicker: false, start:finalAnswer });
   };
 
-  validate = () =>{
+  isTimeLess = () => {
+    let start = this.state.start;
+    let end = this.state.end;
+
+    if(!start && !end){
+      return true;
+    }else{
+      return false;
+    }
+  }
+
+  validate = () => {
     let date = this.state.date;
     let start = this.state.start;
     let end = this.state.end;
 
-    if(!start && !end){ 
-      //console.log("Both not provided")
+    if(!start && !end){
       return false;
     }
     else if(!start || !end){
-      //Another issue
       return true;
     }
     const dayDate = new Date(date);

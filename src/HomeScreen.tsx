@@ -22,8 +22,8 @@ export interface Item {
     height : number;
     completed : boolean;
     date : string;
-    day : string;
     key : string;
+    timeless:boolean;
 }
 
 interface State {
@@ -91,10 +91,19 @@ export default class HomeScreen extends Component < any, State > {
                     height: 100,
                     completed: parsedJSON.completed,
                     date: parsedJSON.date,
-                    day: parsedJSON.date,
-                    key: key
+                    key: key,
+                    timeless:parsedJSON.timeless
                 });
-                items[ourDate].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                items[ourDate].sort((a, b) => {
+                  if (a.timeless && !b.timeless) {
+                    return -1; // a comes before b
+                  } else if (!a.timeless && b.timeless) {
+                    return 1; // b comes before a
+                  }
+                  else{
+                    return new Date(a.date).getTime() - new Date(b.date).getTime()
+                  }
+                });
             }
             var today = HomeScreenService.parseDateIntoStringAndVice(new Date());
             if(items[today]==undefined){
@@ -214,6 +223,28 @@ export default class HomeScreen extends Component < any, State > {
       
         const time = reservation.end.split(":");
         meetingEnd.setHours(Number.parseInt(time[0]), Number.parseInt(time[1]));
+
+        if(reservation.timeless && !reservation.completed){
+          return (
+            <TouchableOpacity
+              onLongPress={() => this.deleteEvent(reservation)}
+              onPress={() => this.createCompletness(reservation)}
+              style={{
+                width: '95%',
+                height: reservation.height,
+                marginBottom: 10,
+                marginTop: 5,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'white',
+                borderRadius: 20,
+                overflow: 'hidden',
+              }}
+            >
+              <NotCompletePassed data={reservation} />
+            </TouchableOpacity>
+          );
+        }
       
         if (reservation.completed) {
           return (
