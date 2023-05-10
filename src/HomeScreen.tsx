@@ -1,5 +1,5 @@
 import React, {Component, ReactNode} from 'react';
-import { Alert, StyleSheet, Text, Animated, Easing, View, TouchableOpacity} from 'react-native';
+import { Alert, Text, View, TouchableOpacity} from 'react-native';
 import {Agenda} from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -29,24 +29,21 @@ export interface Item {
 interface State {
     today : Date;
     items : Record < string, Item[] >;
-    loadedKeys : string[];
 }
 
 export default class HomeScreen extends Component < any, State > {
-    private spinValue = new Animated.Value(0);
+
 
     constructor(props : {}) {
         super(props);
         this.state = {
             today: new Date(),
             items: {},
-            loadedKeys: []
         };
     }
 
     componentDidMount() {
         this.loadDataSet();
-        this.spin();
     }
 
 
@@ -63,57 +60,6 @@ export default class HomeScreen extends Component < any, State > {
     }
     
 
-    retrieveData = async(key : string) => {
-        try {
-            const value = await AsyncStorage.getItem(key);
-            if (value !== null) {
-                const parsedJSON : Item = JSON.parse(value);
-                const ourDate = HomeScreenService.parseDateIntoStringAndVice(new Date(parsedJSON.date));
-
-                if (!this.state.items[ourDate]) {
-                    this.state.items[ourDate] = [];
-                }
-
-                var item : Item = {
-                    start: parsedJSON.start,
-                    end: parsedJSON.end,
-                    name: parsedJSON.name,
-                    description: parsedJSON.description,
-                    height: 100,
-                    completed: parsedJSON.completed,
-                    date: parsedJSON.date,
-                    key: key,
-                    day: parsedJSON.date
-                }
-
-                this
-                    .state
-                    .items[ourDate]
-                    .push(item);
-                this
-                    .state
-                    .items[ourDate]
-                    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    spin() {
-        this
-            .spinValue
-            .setValue(0);
-        Animated
-            .timing(this.spinValue, {
-            toValue: 1,
-            duration: 3000,
-            easing: Easing.linear,
-            useNativeDriver: true
-        })
-            .start(() => this.spin());
-    }
-
     loadDataSet = async() => {
         let items : {
             [key : string] : any[]
@@ -126,9 +72,6 @@ export default class HomeScreen extends Component < any, State > {
                 this.setState({items: items});
                 return;
             }
-            this.setState({loadedKeys: keys});
-
-            let timestamps : number[] = [];
 
             for (const key of keys) {
                 const value = await AsyncStorage.getItem(key);
@@ -136,7 +79,6 @@ export default class HomeScreen extends Component < any, State > {
                 let timestamp = new Date(parsedJSON.date).getTime();
                 var ourDate = HomeScreenService.parseDateIntoStringAndVice(parsedJSON.date);
 
-                timestamps.push(timestamp);
 
                 if (!items[ourDate]) {
                     items[ourDate] = [];
@@ -168,10 +110,6 @@ export default class HomeScreen extends Component < any, State > {
     }
 
     render(): React.ReactNode {
-        const spin = this.spinValue.interpolate({
-            inputRange: [0, 1],
-            outputRange: ['0deg', '360deg']
-        });
           return (
             <SafeAreaProvider style={{ flex: 1 }}>
               <Agenda
@@ -387,24 +325,3 @@ export default class HomeScreen extends Component < any, State > {
       
 
 }
-
-
-const styles = StyleSheet.create({
-    //beaty spinner
-    container: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#fff'
-    },
-    logo: {
-      fontSize: 40,
-      fontWeight: 'bold',
-      color: '#333'
-    },
-    text: {
-      marginTop: 20,
-      fontSize: 20,
-      color: '#333'
-    }
-  });
