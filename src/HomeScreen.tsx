@@ -61,9 +61,9 @@ export default class HomeScreen extends Component < any, State > {
     
 
     loadDataSet = async() => {
-        let items : {
-            [key : string] : any[]
-        } = {};
+        console.log("we are inside");
+        let items : { [key : string] : any[] } = {};
+        this.setState({items:{}})
         try {
             const keys = await AsyncStorage.getAllKeys();
             if (keys.length === 0) {
@@ -76,9 +76,7 @@ export default class HomeScreen extends Component < any, State > {
             for (const key of keys) {
                 const value = await AsyncStorage.getItem(key);
                 const parsedJSON = JSON.parse(value !);
-                let timestamp = new Date(parsedJSON.date).getTime();
                 var ourDate = HomeScreenService.parseDateIntoStringAndVice(parsedJSON.date);
-
 
                 if (!items[ourDate]) {
                     items[ourDate] = [];
