@@ -39,6 +39,28 @@ class HomeScreenService {
         return formattedDate
     }
 
+
+    static loopInGivenMonth(items: { [key : string] : any[] }, currentDate: Date){
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth();
+
+          // Get the first day of the month
+        const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+        
+          // Get the last day of the month
+        const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+
+        for (let day = firstDayOfMonth.getDate(); day <= lastDayOfMonth.getDate(); day++) {
+            var date = new Date(currentYear, currentMonth, day);
+            var parsedDate = HomeScreenService.parseDateIntoStringAndVice(date);
+            if (!items[parsedDate]) {
+                items[parsedDate] = [];
+            }
+        }
+
+        return items;
+    }
+
 }
 
 export default HomeScreenService;

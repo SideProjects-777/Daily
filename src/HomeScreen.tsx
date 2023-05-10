@@ -32,7 +32,7 @@ interface State {
 }
 
 export default class HomeScreen extends Component < any, State > {
-
+    
 
     constructor(props : {}) {
         super(props);
@@ -61,7 +61,6 @@ export default class HomeScreen extends Component < any, State > {
     
 
     loadDataSet = async() => {
-        console.log("we are inside");
         let items : { [key : string] : any[] } = {};
         this.setState({items:{}})
         try {
@@ -72,6 +71,8 @@ export default class HomeScreen extends Component < any, State > {
                 this.setState({items: items});
                 return;
             }
+
+            items = HomeScreenService.loopInGivenMonth(items, new Date());
 
             for (const key of keys) {
                 const value = await AsyncStorage.getItem(key);
@@ -112,7 +113,7 @@ export default class HomeScreen extends Component < any, State > {
             <SafeAreaProvider style={{ flex: 1 }}>
               <Agenda
                 items={this.state.items}
-                selected={this.state.today}
+                selected={this.state.today.toISOString()}
                 renderItem={this.renderItem}
                 rowHasChanged={this.rowHasChanged}
                 loadItemsForMonth={this.dateChanged}
@@ -212,7 +213,7 @@ export default class HomeScreen extends Component < any, State > {
         meetingEnd.setHours(meetingEnd.getHours() - 2);
       
         const time = reservation.end.split(":");
-        meetingEnd.setHours(time[0], time[1]);
+        meetingEnd.setHours(Number.parseInt(time[0]), Number.parseInt(time[1]));
       
         if (reservation.completed) {
           return (
@@ -308,18 +309,9 @@ export default class HomeScreen extends Component < any, State > {
 
       dateChanged = (date: DateData) => {
         let {items} = this.state;
-        var ourDate = HomeScreenService.parseDateIntoStringAndVice(new Date(date.dateString));
-        if (!items[ourDate]) {
-          items[ourDate] = [];
-        }
+        items = HomeScreenService.loopInGivenMonth(items, new Date(date.dateString));
         this.setState({items: items});
 
-      }
-    
-      timeToString(time:string) {
-        const date = new Date(time);
-        return date.toISOString().split('T')[0];
-      }
-      
+      }    
 
 }
