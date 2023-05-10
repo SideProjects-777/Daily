@@ -1,9 +1,28 @@
 import React, {Component} from 'react';
 import {View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Button} from 'react-native';
-import * as Google from 'expo-google-app-auth';
+import * as GoogleSignIn from 'expo-google-sign-in';
 
-const CLIENT_ID = 'test';
+
+const event = {
+    summary: 'Test Event',
+    start: {
+      dateTime: '2023-05-11T10:00:00',
+      timeZone: 'Europe/Berlin', // e.g., 'America/Los_Angeles'
+    },
+    end: {
+      dateTime: '2023-05-11T12:00:00',
+      timeZone: 'Europe/Berlin', // e.g., 'America/Los_Angeles'
+    },
+};
+
+
+const CLIENT_ID = '';
+//const CLIENT_ID = ;
+//const CLIENT_SECRET = '';
 const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar';
+
+
+
 
 interface State {
     email : string;
@@ -21,29 +40,33 @@ class LoginView extends Component < {},State > {
         };
     }
 
-    handleSignIn = async () => {
-        try {
-          const result = await Google.logInAsync({
+
+    componentDidMount(): void {
+        console.log(CLIENT_ID);
+        GoogleSignIn.initAsync({
             clientId: CLIENT_ID,
-            scopes: [CALENDAR_SCOPE],
-          });
-    
-          if (result.type === 'success') {
-            const accessToken = result.accessToken;
-    
-            const response = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            });
-    
-            const data = await response.json();
-            this.setState({ calendars: data.items });
+        });
+        
+    }
+
+
+
+    handleGoogleSignIn = async () => {
+        try {
+          await GoogleSignIn.askForPlayServicesAsync();
+          const { type, user } = await GoogleSignIn.signInAsync();
+          
+          if (type === 'success') {
+            console.log('User Info:', user);
+            // Handle successful sign-in here
+          } else {
+            console.log('Google sign-in cancelled');
           }
         } catch (error) {
-          console.error(error);
+          console.error('Google sign-in error:', error);
         }
       };
+
     
 
     handleEmailChange = (text : string) => {
@@ -90,13 +113,9 @@ class LoginView extends Component < {},State > {
                     <TouchableOpacity style={styles.button} onPress={this.handleProceed}>
                         <Text style={styles.buttonText}>Local</Text>
                     </TouchableOpacity>
-
-                    <TouchableOpacity onPress={this.handleSignIn} style={styles.button}>
-                            <Text style={styles.buttonText}>Sign In</Text>
-                        </TouchableOpacity>
-                        {calendars.map(calendar => (
-                        <Text key={calendar.id}>{calendar.summary}</Text>
-                        ))}
+                    <TouchableOpacity style={styles.button} onPress={this.handleGoogleSignIn}>
+                        <Text style={styles.buttonText}>GGGG</Text>
+                    </TouchableOpacity>
 
                     </View>
                 </View>
