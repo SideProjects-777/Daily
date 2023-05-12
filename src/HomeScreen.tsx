@@ -94,6 +94,10 @@ export default class HomeScreen extends Component < any, State > {
                     key: key,
                     timeless:parsedJSON.timeless
                 });
+                
+                items[ourDate] = HomeScreenService.sort(items[ourDate]);
+
+                /*
                 items[ourDate].sort((a, b) => {
                   if (a.timeless && !b.timeless) {
                     return -1; // a comes before b
@@ -104,6 +108,7 @@ export default class HomeScreen extends Component < any, State > {
                     return new Date(a.date).getTime() - new Date(b.date).getTime()
                   }
                 });
+                */
             }
             var today = HomeScreenService.parseDateIntoStringAndVice(new Date());
             if(items[today]==undefined){
