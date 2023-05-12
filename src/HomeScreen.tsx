@@ -94,6 +94,10 @@ export default class HomeScreen extends Component < any, State > {
                     key: key,
                     timeless:parsedJSON.timeless
                 });
+                
+                items[ourDate] = HomeScreenService.sort(items[ourDate]);
+
+                /*
                 items[ourDate].sort((a, b) => {
                   if (a.timeless && !b.timeless) {
                     return -1; // a comes before b
@@ -104,6 +108,7 @@ export default class HomeScreen extends Component < any, State > {
                     return new Date(a.date).getTime() - new Date(b.date).getTime()
                   }
                 });
+                */
             }
             var today = HomeScreenService.parseDateIntoStringAndVice(new Date());
             if(items[today]==undefined){
@@ -159,7 +164,7 @@ export default class HomeScreen extends Component < any, State > {
           Alert.alert('Do you want to remove the event?', reservation.name, [
             {
               text: 'Close',
-              onPress: () => console.log('Cancel Pressed'),
+              //onPress: () => 
               style: 'cancel',
             },
             {text: 'Remove', onPress: () => {
@@ -182,7 +187,7 @@ export default class HomeScreen extends Component < any, State > {
             },
             {
               text: 'Cancel',
-              onPress: () => console.log('Cancel Pressed'),
+              //onPress: () => 
               style: 'cancel',
             },
             {text: 'Completed', onPress: () => {
@@ -200,7 +205,7 @@ export default class HomeScreen extends Component < any, State > {
             },
             {
               text: 'Close',
-              onPress: () => console.log('Cancel Pressed'),
+              //onPress: () =>,
               style: 'cancel',
             },
             {text: 'Activate', onPress: () => {

@@ -97,7 +97,7 @@ export default class NewEvent extends Component<Props, State> {
 
   handleSave = () => {
     const {key} = this.state;
-    const newKey = Math.random().toString(36).substring(2, 14);
+    const newKey = NewEventService.generateRandomKey();
     
     if(!this.validate()){
       if(key){

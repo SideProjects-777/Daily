@@ -14,6 +14,14 @@ class NewEventService {
         }
         return new Date(date);
     };
+
+
+    static generateRandomKey():string{
+        const timestamp = new Date().getTime();
+        const counter = timestamp % 9000 + 1000;
+        const randomString = counter.toString(36).substring(2, 14);
+        return randomString;
+    }
 }
 
 export default NewEventService;
