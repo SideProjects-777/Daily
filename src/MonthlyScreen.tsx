@@ -44,7 +44,12 @@ class MonthlyScreen extends Component < any, State > {
 navToWeekScreen =(date: Date) => {
 
   //console.log(date)
-  this.props.navigation.navigate('Weekly', {date:date})
+  let obj = {
+    year: date.getFullYear(),
+    month : date.getMonth(),
+    day: date.getDate()
+  }
+  this.props.navigation.navigate('Weekly', {obj:obj})
 }
 
 

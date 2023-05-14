@@ -43,7 +43,7 @@ export default class WeeklyScreen extends Component < any, State > {
     }
 
     componentDidMount() {
-        this.loadDataSet();
+        this.loadDataSet(new Date());
     }
 
 
@@ -51,30 +51,30 @@ export default class WeeklyScreen extends Component < any, State > {
     componentDidUpdate(prevProps: any) {
       const { route } = this.props;
       if (route && route.params) {
-        const date = route.params;
-        if (date) {
-          console.log(date);
-          this.setState({selectedDate:new Date(date)})
-          this.loadDataSet();
+        let {obj} = route.params;
+        if (obj) {
+          this.setState({selectedDate:new Date(obj.year,obj.month,obj.day)})
+          this.loadDataSet(new Date(obj.year,obj.month,obj.day));
           this.props.route.params = undefined;
         }
       }
     }
     
 
-    loadDataSet = async() => {
+    loadDataSet = async(date: Date) => {
         let items : { [key : string] : any[] } = {};
         this.setState({items:{}})
         try {
+            console.log(date);
             const keys = await AsyncStorage.getAllKeys();
             if (keys.length === 0) {
-                var today = HomeScreenService.parseDateIntoStringAndVice(new Date());
+                var today = HomeScreenService.parseDateIntoStringAndVice(date);
                 items[today] = [];
                 this.setState({items: items});
                 return;
             }
 
-            items = HomeScreenService.loopInGivenMonth(items, new Date());
+            //items = HomeScreenService.loopInGivenMonth(items, new Date());
 
             for (const key of keys) {
                 const value = await AsyncStorage.getItem(key);
