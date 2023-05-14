@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Component, ReactNode} from 'react';
 import { Calendar } from 'react-native-big-calendar';
 import { View, Text, Button, StyleSheet, Dimensions, ScrollView, Image, TouchableOpacity } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -26,40 +26,62 @@ const events = [
   },
 ];
 
-class Monthly extends React.Component {
+
+interface State {
+  today : Date;
+}
+
+
+class Monthly extends Component < any, State > {
+
+  constructor(props : {}) {
+    super(props);
+    this.state = {
+        today: new Date(),
+    };
+}
+
+nextMonth = () => {
+  var {today} = this.state;
+  var nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  this.setState({today:nextMonth})
+0
+};
+
+prevMonth = () => {
+  var {today} = this.state;
+  // Get the previous month
+  var previousMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  this.setState({today:previousMonth})
+};
+
+
   render() {
+    const {today} = this.state;
     return (
       <View style={styles.container}>
-        <View style={styles.buttons}>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Button 1</Text>
+        <TouchableOpacity style={styles.buttonContainer}>         
+            <FontAwesome name="calendar" size={22} color="#4186f5" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Button 2</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Button 3</Text>
-          </TouchableOpacity>
-        </View>
         <ScrollView nestedScrollEnabled={true} horizontal={false}>
 
         <View style={styles.scroller}>
-          <TouchableOpacity style={styles.button}>
-          <FontAwesome name="step-backward" size={22} color="green" />
+          <TouchableOpacity style={styles.button} onPress={() => this.prevMonth() }>
+          <FontAwesome name="step-backward" size={22} color="#4186f5" />
           </TouchableOpacity>
           <View style={styles.month}>
-            <Text style={styles.monthText}>Button 2</Text>
+            <Text style={styles.monthText}>{today.toLocaleString('default', { month: 'long' })} / {today.getFullYear()}</Text>
           </View>
-          <TouchableOpacity style={styles.button}>
-            <FontAwesome name="step-forward" size={22} color="green" />
+          <TouchableOpacity style={styles.button} onPress={() => this.nextMonth() }>
+            <FontAwesome name="step-forward" size={22} color="#4186f5" />
           </TouchableOpacity>
         </View>
           <Calendar
             mode={'month'}
             events={events}
             height={windowHeight- 200}
-            swipeEnabled={true}
-            
+            swipeEnabled={false}
+            date={today}
             onPressCell={(date: Date) => console.log(date)}
             //calendarCellStyle={{borderColor:'yellow'}}
             showTime={true}
@@ -77,6 +99,14 @@ const styles = StyleSheet.create({
         
     
   },
+  buttonContainer:{
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#f0f0f0',
+  },
   scroller: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -86,7 +116,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
   },
   button: {
-    backgroundColor: '#ccc',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 4,
@@ -104,7 +133,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   monthText:{
-
+    color: "#4186f5"
   }
 });
 
