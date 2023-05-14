@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
-import HomeScreen from './src/HomeScreen';
+import WeeklyScreen from './src/WeeklyScreen';
 import NewEvent from './src/NewEvent';
-import MonthAgenda from './src/Monthly';
+import MonthlyScreen from './src/MonthlyScreen';
 
 const Stack = createStackNavigator();
 
@@ -12,8 +12,8 @@ export default class App extends Component {
     return (
     <NavigationContainer>
         <Stack.Navigator initialRouteName='Monthly'>
-        <Stack.Screen name='Monthly' component={MonthAgenda} options={{headerShown: false}} />
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name='Monthly' component={MonthlyScreen} options={{headerShown: false}} />
+        <Stack.Screen name="Weekly" component={WeeklyScreen} />
         <Stack.Screen name="Add" component={NewEvent} options={{headerShown: false}}/>
         </Stack.Navigator>
     </NavigationContainer>

@@ -27,23 +27,23 @@ export interface Item {
 }
 
 interface State {
-    today : Date;
+    selectedDate:Date;
     items : Record < string, Item[] >;
 }
 
-export default class HomeScreen extends Component < any, State > {
+export default class WeeklyScreen extends Component < any, State > {
     
 
     constructor(props : {}) {
         super(props);
         this.state = {
-            today: new Date(),
+            selectedDate:new Date(),
             items: {},
         };
     }
 
     componentDidMount() {
-        this.loadDataSet();
+        this.loadDataSet(new Date());
     }
 
 
@@ -51,28 +51,30 @@ export default class HomeScreen extends Component < any, State > {
     componentDidUpdate(prevProps: any) {
       const { route } = this.props;
       if (route && route.params) {
-        const completed = route.params;
-        if (completed) {
-          this.loadDataSet();
+        let {obj} = route.params;
+        if (obj) {
+          this.setState({selectedDate:new Date(obj.year,obj.month,obj.day)})
+          this.loadDataSet(new Date(obj.year,obj.month,obj.day));
           this.props.route.params = undefined;
         }
       }
     }
     
 
-    loadDataSet = async() => {
+    loadDataSet = async(date: Date) => {
         let items : { [key : string] : any[] } = {};
         this.setState({items:{}})
         try {
+            console.log(date);
             const keys = await AsyncStorage.getAllKeys();
             if (keys.length === 0) {
-                var today = HomeScreenService.parseDateIntoStringAndVice(new Date());
+                var today = HomeScreenService.parseDateIntoStringAndVice(date);
                 items[today] = [];
                 this.setState({items: items});
                 return;
             }
 
-            items = HomeScreenService.loopInGivenMonth(items, new Date());
+            //items = HomeScreenService.loopInGivenMonth(items, new Date());
 
             for (const key of keys) {
                 const value = await AsyncStorage.getItem(key);
@@ -96,19 +98,6 @@ export default class HomeScreen extends Component < any, State > {
                 });
                 
                 items[ourDate] = HomeScreenService.sort(items[ourDate]);
-
-                /*
-                items[ourDate].sort((a, b) => {
-                  if (a.timeless && !b.timeless) {
-                    return -1; // a comes before b
-                  } else if (!a.timeless && b.timeless) {
-                    return 1; // b comes before a
-                  }
-                  else{
-                    return new Date(a.date).getTime() - new Date(b.date).getTime()
-                  }
-                });
-                */
             }
             var today = HomeScreenService.parseDateIntoStringAndVice(new Date());
             if(items[today]==undefined){
@@ -127,7 +116,7 @@ export default class HomeScreen extends Component < any, State > {
             <SafeAreaProvider style={{ flex: 1 }}>
               <Agenda
                 items={this.state.items}
-                selected={this.state.today.toISOString()}
+                selected={this.state.selectedDate.toISOString()}
                 renderItem={this.renderItem}
                 rowHasChanged={this.rowHasChanged}
                 loadItemsForMonth={this.dateChanged}
