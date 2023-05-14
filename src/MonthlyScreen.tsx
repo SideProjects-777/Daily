@@ -1,31 +1,13 @@
 import React, {Component, ReactNode} from 'react';
 import { Calendar, CalendarTouchableOpacityProps, ICalendarEventBase } from 'react-native-big-calendar';
 import { View, Text, Button, StyleSheet, Dimensions, ScrollView, Image, TouchableOpacity } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import {events} from './data/data';
 
 const now = new Date();
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
-
-const events = [
-  {
-    title: 'Meeting',
-    start: new Date(),
-    end: new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 2, now.getMinutes()),
-  },
-  {
-    title: 'Date',
-    start: new Date(2023, 4, 14, 10, 0),
-    end: new Date(2023, 4, 14, 12, 30),
-  },
-  {
-    title: 'Coffee break',
-    start: new Date(2023, 4, 15, 15, 45),
-    end: new Date(2023, 4, 15, 16, 30),
-  },
-];
 const red = 'red';
 const blue = 'blue';
 const blueGradient = '#4186f5';
