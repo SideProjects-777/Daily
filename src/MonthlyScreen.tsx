@@ -3,6 +3,7 @@ import { Calendar, CalendarTouchableOpacityProps, ICalendarEventBase } from 'rea
 import { View, Text, Button, StyleSheet, Dimensions, ScrollView, Image, TouchableOpacity } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 
 const now = new Date();
 const windowWidth = Dimensions.get('window').width;
@@ -31,6 +32,7 @@ const blueGradient = '#4186f5';
 
 interface State {
   today : Date;
+  mode:string;
 }
 
 
@@ -40,6 +42,7 @@ class MonthlyScreen extends Component < any, State > {
     super(props);
     this.state = {
         today: new Date(),
+        mode:'month'
     };
 }
 
@@ -75,18 +78,32 @@ renderEvent = <T extends ICalendarEventBase>(
   console.log(event);
   return (
   <TouchableOpacity {...touchableOpacityProps}>
-    <Text>{`My custom event: ${event.title} with a color: ${blueGradient}`}</Text>
+    <Text>{event.title}</Text>
   </TouchableOpacity>)
 }
 
 
   render() {
-    const {today} = this.state;
+    const {today, mode} = this.state;
     return (
       <View style={styles.container}>
-        <TouchableOpacity style={styles.buttonContainer}>         
-            <FontAwesome name="calendar" size={22} color="#4186f5" />
-          </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.mode} onPress={() => this.setState({mode:'day'}) }>         
+              <FontAwesome5 name="calendar-day" size={22} color="#4186f5" /> 
+            </TouchableOpacity >
+            <TouchableOpacity style={styles.mode} onPress={() => this.setState({mode:'3days'}) }>         
+              <FontAwesome5 name="calendar-times" size={22} color="#4186f5" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.mode} onPress={() => this.setState({mode:'week'}) }>         
+              <FontAwesome5 name="calendar-week" size={22} color="#4186f5" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.mode} onPress={() => this.setState({mode:'month'}) }>         
+              <FontAwesome name="calendar" size={22} color="#4186f5" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.mode}>         
+              <FontAwesome5 name="calendar-plus" size={22} color="#4186f5" />
+            </TouchableOpacity>
+        </View>
         <ScrollView nestedScrollEnabled={true} horizontal={false}>
 
         <View style={styles.scroller}>
@@ -101,7 +118,7 @@ renderEvent = <T extends ICalendarEventBase>(
           </TouchableOpacity>
         </View>
           <Calendar
-            mode={'3days'}
+            mode={mode}
             events={events}
             height={windowHeight- 200}
             swipeEnabled={true}
@@ -133,6 +150,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     backgroundColor: '#f0f0f0',
+  },
+  mode:{
+    marginHorizontal:'3%',
   },
   scroller: {
     flexDirection: 'row',
