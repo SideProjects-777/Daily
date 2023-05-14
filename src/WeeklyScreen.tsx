@@ -27,7 +27,7 @@ export interface Item {
 }
 
 interface State {
-    today : Date;
+    selectedDate:Date;
     items : Record < string, Item[] >;
 }
 
@@ -37,7 +37,7 @@ export default class WeeklyScreen extends Component < any, State > {
     constructor(props : {}) {
         super(props);
         this.state = {
-            today: new Date(),
+            selectedDate:new Date(),
             items: {},
         };
     }
@@ -51,8 +51,10 @@ export default class WeeklyScreen extends Component < any, State > {
     componentDidUpdate(prevProps: any) {
       const { route } = this.props;
       if (route && route.params) {
-        const completed = route.params;
-        if (completed) {
+        const date = route.params;
+        if (date) {
+          console.log(date);
+          this.setState({selectedDate:new Date(date)})
           this.loadDataSet();
           this.props.route.params = undefined;
         }
@@ -96,19 +98,6 @@ export default class WeeklyScreen extends Component < any, State > {
                 });
                 
                 items[ourDate] = HomeScreenService.sort(items[ourDate]);
-
-                /*
-                items[ourDate].sort((a, b) => {
-                  if (a.timeless && !b.timeless) {
-                    return -1; // a comes before b
-                  } else if (!a.timeless && b.timeless) {
-                    return 1; // b comes before a
-                  }
-                  else{
-                    return new Date(a.date).getTime() - new Date(b.date).getTime()
-                  }
-                });
-                */
             }
             var today = HomeScreenService.parseDateIntoStringAndVice(new Date());
             if(items[today]==undefined){
@@ -127,7 +116,7 @@ export default class WeeklyScreen extends Component < any, State > {
             <SafeAreaProvider style={{ flex: 1 }}>
               <Agenda
                 items={this.state.items}
-                selected={this.state.today.toISOString()}
+                selected={this.state.selectedDate.toISOString()}
                 renderItem={this.renderItem}
                 rowHasChanged={this.rowHasChanged}
                 loadItemsForMonth={this.dateChanged}

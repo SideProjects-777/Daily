@@ -41,7 +41,11 @@ class MonthlyScreen extends Component < any, State > {
     };
 }
 
-navToWeekScreen =() => {}
+navToWeekScreen =(date: Date) => {
+
+  //console.log(date)
+  this.props.navigation.navigate('Weekly', {date:date})
+}
 
 
 nextMonth = () => {
@@ -84,7 +88,7 @@ prevMonth = () => {
             height={windowHeight- 200}
             swipeEnabled={false}
             date={today}
-            onPressCell={(date: Date) => console.log(date)}
+            onPressCell={(date: Date) => {this.navToWeekScreen(date)}}
             //calendarCellStyle={{borderColor:'yellow'}}
             showTime={true}
           />

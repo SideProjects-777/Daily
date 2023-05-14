@@ -13,7 +13,7 @@ export default class App extends Component {
     <NavigationContainer>
         <Stack.Navigator initialRouteName='Monthly'>
         <Stack.Screen name='Monthly' component={MonthlyScreen} options={{headerShown: false}} />
-        <Stack.Screen name="Home" component={WeeklyScreen} />
+        <Stack.Screen name="Weekly" component={WeeklyScreen} />
         <Stack.Screen name="Add" component={NewEvent} options={{headerShown: false}}/>
         </Stack.Navigator>
     </NavigationContainer>
