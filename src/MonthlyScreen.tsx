@@ -32,7 +32,7 @@ interface State {
 }
 
 
-class Monthly extends Component < any, State > {
+class MonthlyScreen extends Component < any, State > {
 
   constructor(props : {}) {
     super(props);
@@ -41,11 +41,13 @@ class Monthly extends Component < any, State > {
     };
 }
 
+navToWeekScreen =() => {}
+
+
 nextMonth = () => {
   var {today} = this.state;
   var nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-  this.setState({today:nextMonth})
-0
+  this.setState({today:nextMonth});
 };
 
 prevMonth = () => {
@@ -137,4 +139,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default Monthly;
+export default MonthlyScreen;

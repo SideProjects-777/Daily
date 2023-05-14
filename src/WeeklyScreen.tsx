@@ -31,7 +31,7 @@ interface State {
     items : Record < string, Item[] >;
 }
 
-export default class HomeScreen extends Component < any, State > {
+export default class WeeklyScreen extends Component < any, State > {
     
 
     constructor(props : {}) {

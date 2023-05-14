@@ -1,7 +1,7 @@
 // import { Item } from
 // "react-native-paper/lib/typescript/src/components/Drawer/Drawer";
 
-import {Item} from "../HomeScreen";
+import {Item} from "../WeeklyScreen";
 
 class HomeScreenService {
 
